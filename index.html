@@ -1,51 +1,16 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Test Phaser</title>
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background: #111;
-        }
-    </style>
+  <meta charset="utf-8">
+  <title>Game Phaser</title>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
 </head>
 <body>
 
-<script>
-    const config = {
-        type: Phaser.AUTO,
-        width: 800,
-        height: 600,
-        backgroundColor: '#1e1e1e',
-        scene: {
-            preload,
-            create,
-            update
-        }
-    };
+  <script src="level.js"></script>
+<script src="menu.js"></script>
 
-    const game = new Phaser.Game(config);
 
-    function preload() {
-        // test load asset (opsional)
-    }
-
-    function create() {
-        this.add.text(200, 280, 'Phaser OK ✅', {
-            fontSize: '32px',
-            color: '#00ffcc'
-        });
-
-        console.log('Phaser berhasil jalan');
-    }
-
-    function update() {
-        // game loop
-    }
-</script>
 
 </body>
 </html>
