@@ -86,10 +86,20 @@ this.tweens.add({
   }
 }
 
+// ... kode scene di atas biarkan saja ...
+
 const config = {
   type: Phaser.AUTO,
-  width: 1344,
-  height: 810,
+  // Resolusi desain asli kamu
+  width: 1344, 
+  height: 720, 
+  backgroundColor: '#000000', // Warna background canvas
+  scale: {
+    // 🔥 MODE FIT: Game akan pas di layar browser apapun ukurannya
+    mode: Phaser.Scale.FIT, 
+    // 🔥 CENTER: Game otomatis di tengah-tengah
+    autoCenter: Phaser.Scale.CENTER_BOTH 
+  },
   scene: [menuScene, levelScene],
 };
 
