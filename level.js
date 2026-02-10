@@ -83,7 +83,7 @@ tombolback.on('pointerdown', () => {
 //=================================tombol level untuk game================================//
 
 // tombol level1
-    const levelpijak = this.add.image(175 / 2, 235, 'levelpijak')
+    const levelpijak = this.add.image(175 / 2, 183, 'levelpijak')
         .setDepth(10)
         .setInteractive()
         .setScale(0.13);
@@ -113,7 +113,7 @@ tombolback.on('pointerdown', () => {
 
 
  // tombol level2
-    const levellock = this.add.image(600 / 2, 235, 'levellock')
+    const levellock = this.add.image(600 / 2, 183, 'levellock')
         .setDepth(10)
         .setScale(0.13);
 
