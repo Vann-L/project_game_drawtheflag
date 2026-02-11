@@ -1,202 +1,260 @@
 class gameplayScene extends Phaser.Scene {
-  constructor() {
-    super('gameplay');
-  }
+    constructor() {
+        super('gameplay');
+    }
 
-  preload() {
-    // =================================================================
-    // 1. LOAD ASET
-    // =================================================================
-    
-    // Background Utama (Sesuai file yang kamu upload)
-    this.load.image('bgBoard', 'asset/Gameplay.png'); 
+    preload() {
+        // 1. LOAD ASET
+        this.load.image('bgBoard', 'asset/Gameplay.png'); 
+        this.load.image('btnBack', 'asset/tombolback.png');
+        this.load.image('btnHint', 'asset/petunjuk.png'); 
+        this.load.image('paletMerah', 'asset/paletmerah.png'); 
+        this.load.image('paletPutih', 'asset/paletputih.png');
+        this.load.image('bgKuas', 'asset/penampungkuas.png');
+        this.load.image('iconKuas', 'asset/kuas.png');
+    }
 
-    // UI & Tombol
-    this.load.image('btnBack', 'asset/tombolback.png');
-    this.load.image('btnHint', 'asset/petunjuk.png'); 
+    create() {
+        const { width, height } = this.scale;
 
-    // Palet Warna (Pastikan nama file di folder asset 'paletmerah.png' dll)
-    this.load.image('paletMerah', 'asset/paletmerah.png'); 
-    this.load.image('paletPutih', 'asset/paletputih.png');
+        // 1. PASANG BACKGROUND
+        this.add.image(width / 2, height / 2, 'bgBoard').setDisplaySize(width, height);
 
-    // Dekorasi Kuas
-    this.load.image('bgKuas', 'asset/penampungkuas.png');
-    this.load.image('iconKuas', 'asset/kuas.png');
-  }
+        // ==================================================================
+        // 🔥 PENGATURAN POSISI & UKURAN 🔥
+        // ==================================================================
+        const boardX = width / 2.04; 
+        const boardY = height / 2 + 13; 
+        const flagW = 512; 
+        const flagH = 306; 
+        const halfHeight = flagH / 2;
 
-  create() {
-    const { width, height } = this.scale;
+        // --- VARIABEL ---
+        this.selectedColor = null; 
 
-    // 1. PASANG BACKGROUND
-    this.add.image(width / 2, height / 2, 'bgBoard').setDisplaySize(width, height);
+        // --- FUNGSI ARSIRAN (Background) ---
+        const createStripes = (x, y, w, h) => {
+            const graphics = this.add.graphics();
+            graphics.lineStyle(2, 0xAAAAAA, 0.5); 
+            
+            for (let i = -w; i < w + h; i += 15) { 
+                graphics.beginPath();
+                graphics.moveTo(x - w/2 + i, y - h/2);
+                graphics.lineTo(x - w/2 + i - h, y + h/2);
+                graphics.strokePath();
+            }
+            
+            // Masking
+            const maskShape = this.make.graphics();
+            maskShape.fillStyle(0xffffff);
+            maskShape.fillRect(x - w/2, y - h/2, w, h);
+            const mask = maskShape.createGeometryMask();
+            graphics.setMask(mask);
+            
+            return graphics;
+        };
+
+        // --- AREA 1: ATAS (TARGET MERAH) ---
+        const topY = boardY - (halfHeight / 2);
+        const stripesTop = createStripes(boardX, topY, flagW, halfHeight);
+        const zoneTop = this.add.rectangle(boardX, topY, flagW, halfHeight, 0xFFFFFF)
+            .setInteractive({ useHandCursor: true }).setAlpha(0.01); 
+
+        // --- AREA 2: BAWAH (TARGET PUTIH) ---
+        const bottomY = boardY + (halfHeight / 2);
+        const stripesBottom = createStripes(boardX, bottomY, flagW, halfHeight);
+        const zoneBottom = this.add.rectangle(boardX, bottomY, flagW, halfHeight, 0xFFFFFF)
+            .setInteractive({ useHandCursor: true }).setAlpha(0.01);
 
 
-    // ==================================================================
-    // 🔥 PENGATURAN POSISI (SUDAH AKU SESUAIKAN BIAR PAS) 🔥
-    // ==================================================================
-    
-    // Posisi Tengah Papan
-    const boardX = width / 2.04; 
-    
-    // Posisi Vertikal (Aku turunin dikit biar pas di tengah frame kayu)
-    const boardY = height / 2 + 13; 
+        // --- 🔥 GARIS HITAM & BINGKAI 🔥 ---
+        // Depth 20 supaya garis selalu paling atas
+        this.add.rectangle(boardX, boardY, flagW, 3, 0x000000).setDepth(20);
+        this.add.rectangle(boardX, boardY, flagW, flagH)
+            .setStrokeStyle(3, 0x000000).setDepth(20);
 
-    // Ukuran Area Gambar (Aku kecilin dikit biar gak nabrak kayu)
-    const flagW = 512; 
-    const flagH = 306; 
-
-    // ==================================================================
-
-
-    // --- LOGIC VARIABEL ---
-    this.selectedColor = null; 
-    const halfHeight = flagH / 2;
-
-
-    // --- FUNGSI BIKIN ARSIRAN (GARIS MIRING) ---
-    const createStripes = (x, y, w, h) => {
-        const graphics = this.add.graphics();
-        graphics.lineStyle(2, 0xAAAAAA, 0.5); // Garis abu-abu transparan
         
-        for (let i = -w; i < w + h; i += 15) { // Jarak antar garis 15
-            graphics.beginPath();
-            graphics.moveTo(x - w/2 + i, y - h/2);
-            graphics.lineTo(x - w/2 + i - h, y + h/2);
-            graphics.strokePath();
+        // --- 🖌️ IKON KUAS (Disiapkan di awal, default hidden) ---
+        // Kita simpan di variabel 'this.brush' biar bisa digerakkan global
+        this.add.image(width - 120, height - 100, 'bgKuas').setScale(0.7);
+        this.brushIcon = this.add.image(width - 120, height - 100, 'iconKuas').setScale(0.7).setDepth(30);
+
+
+        // ==================================================================
+        // 🔥 LOGIC MEWARNAI: ORGANIC BRUSH (REALISTIC FEEL) 🔥
+        // ==================================================================
+        // ==================================================================
+        // 🔥 LOGIC MEWARNAI: "LIQUID FILL" (PASTI PENUH & SMOOTH) 🔥
+        // ==================================================================
+        const paintZone = (zone, stripesObj) => {
+            // Cek 1: Warna dipilih?
+            if (this.selectedColor === null) {
+                this.tweens.add({ targets: zone, x: zone.x + 5, duration: 50, yoyo: true, repeat: 3 });
+                return;
+            }
+
+            // Cek 2: Jangan spam klik
+            const currentColor = zone.getData('colorCode');
+            if (zone.getData('isPainting') || currentColor === this.selectedColor) return;
+
+            zone.setData('isPainting', true);
+
+            // --- PERSIAPAN ---
+            const paintGraphics = this.add.graphics().setDepth(5);
+            
+            // Masking (Biar cat gak bleber keluar kotak)
+            const maskShape = this.make.graphics();
+            maskShape.fillStyle(0xffffff);
+            maskShape.fillRect(zone.x - zone.width/2, zone.y - zone.height/2, zone.width, zone.height);
+            const mask = maskShape.createGeometryMask();
+            paintGraphics.setMask(mask);
+
+            // --- KOORDINAT ---
+            const startX = zone.x - zone.width / 2; // Kiri
+            const startY = zone.y;                 // Tengah Vertical
+            const zoneW = zone.width;
+            const zoneH = zone.height;
+
+            // Kita gerakkan Brush Icon ke posisi start dulu
+            this.tweens.add({
+                targets: this.brushIcon,
+                x: startX,
+                y: startY,
+                angle: -20,
+                duration: 400,
+                ease: 'Power2',
+                onComplete: () => {
+                    startPainting();
+                }
+            });
+
+            // --- FUNGSI ANIMASI UTAMA ---
+            const startPainting = () => {
+                const animData = { progress: 0 }; 
+
+                this.tweens.add({
+                    targets: animData,
+                    progress: 1, // Target sampai 100% lebar
+                    duration: 1000, // Durasi ngecat
+                    ease: 'Linear', // Linear biar ngisinya stabil
+                    
+                    onUpdate: () => {
+                        paintGraphics.clear();
+                        paintGraphics.fillStyle(this.selectedColor, 1);
+
+                        // 1. HITUNG POSISI 'KEPALA' KUAS
+                        const currentX = startX + (animData.progress * zoneW);
+                        
+                        // Sedikit goyangan vertikal biar 'hidup' (nggak lurus robot)
+                        const wobble = Math.sin(animData.progress * 15) * 10;
+                        const currentY = startY + wobble;
+
+                        // 2. GAMBAR EKOR (AREA YANG SUDAH DICAT) - KOTAK SOLID
+                        // Ini rahasianya: Kita gambar kotak dari Kiri mentok sampai posisi X sekarang.
+                        // Tingginya kita buat 'zoneH + 50' (lebih gede dari area) biar PASTI KECAT SEMUA.
+                        paintGraphics.fillRect(startX, startY - zoneH/2 - 10, (currentX - startX), zoneH + 20);
+
+                        // 3. GAMBAR KEPALA KUAS (BULATAN)
+                        // Biar ujungnya nggak kotak rata, kita kasih lingkaran di posisi X
+                        // Ukurannya ngikutin tinggi zona biar pas sekali usap
+                        const brushHeadSize = zoneH / 2 + 10; 
+                        paintGraphics.fillCircle(currentX, currentY, brushHeadSize);
+
+                        // 4. UPDATE VISUAL ICON KUAS
+                        this.brushIcon.x = currentX + 30; // Icon agak maju dikit
+                        this.brushIcon.y = currentY - 40; // Icon agak naik (seolah megang gagang)
+                        
+                        // Rotasi goyang dikit pas ngecat
+                        this.brushIcon.setAngle(-20 + Math.cos(animData.progress * 20) * 10);
+                    },
+
+                    onComplete: () => {
+                        // --- FINISHING ---
+                        
+                        // Balikin Kuas
+                        this.tweens.add({
+                            targets: this.brushIcon,
+                            x: width - 120,
+                            y: height - 100,
+                            angle: 0,
+                            duration: 500,
+                            ease: 'Back.out'
+                        });
+
+                        // Hapus Stripes
+                        if (stripesObj.active) stripesObj.destroy();
+                        
+                        // Jadikan Permanen
+                        zone.setFillStyle(this.selectedColor);
+                        zone.setAlpha(1);
+                        
+                        // Bersihkan Graphics (Karena zona udah berwarna, graphic gak perlu lagi)
+                        paintGraphics.destroy();
+                        maskShape.destroy();
+
+                        // Simpan Data
+                        zone.setData('colorCode', this.selectedColor);
+                        zone.setData('isPainting', false);
+                        
+                        // Efek 'Puas'
+                        this.tweens.add({ targets: zone, scale: 1.02, duration: 150, yoyo: true });
+
+                        this.checkWinCondition(zoneTop, zoneBottom);
+                    }
+                });
+            };
+        };
+
+        zoneTop.on('pointerdown', () => paintZone(zoneTop, stripesTop));
+        zoneBottom.on('pointerdown', () => paintZone(zoneBottom, stripesBottom));
+
+
+        // ================= UI ELEMENTS =================
+        const btnBack = this.add.image(60, 60, 'btnBack').setScale(0.12).setInteractive(); 
+        btnBack.on('pointerdown', () => this.scene.start('level'));
+
+        const pMerah = this.add.image(width - 100, height/1.5 - 10, 'paletMerah').setInteractive().setScale(0.8);
+        pMerah.on('pointerdown', () => {
+            this.selectedColor = 0xD9252B; 
+            this.updateBrushColor(0xD9252B);
+            this.tweens.add({ targets: pMerah, scale: 0.9, duration: 100, yoyo: true });
+        });
+
+        const pPutih = this.add.image(width - 100, height/1.8 + 10, 'paletPutih').setInteractive().setScale(0.8);
+        pPutih.on('pointerdown', () => {
+            this.selectedColor = 0xFFFFFF; 
+            this.updateBrushColor(0xFFFFFF);
+            this.tweens.add({ targets: pPutih, scale: 0.9, duration: 100, yoyo: true });
+        });
+
+        // Judul & Timer
+        this.add.rectangle(width - 200, 100, 250, 40, 0xFFFFFF).setStrokeStyle(2, 0x000000);
+        this.add.text(width - 200, 100, 'INDONESIA', {
+            fontSize: '24px', color: '#000000', fontStyle: 'bold'
+        }).setOrigin(0.5);
+
+        const timerFill = this.add.rectangle(width - 325, 60, 250, 15, 0xFF0000).setOrigin(0, 0.5);
+        this.tweens.add({ targets: timerFill, scaleX: 0, duration: 30000, ease: 'Linear' });
+
+        this.add.image(60, height - 60, 'btnHint').setInteractive().setScale(0.8)
+            .on('pointerdown', () => alert("Atas Merah, Bawah Putih!"));
+    } 
+
+    updateBrushColor(color) {
+        this.brushIcon.setTint(color);
+    }
+
+    checkWinCondition(zoneTop, zoneBottom) {
+        const topColor = zoneTop.getData('colorCode');
+        const bottomColor = zoneBottom.getData('colorCode');
+
+        if (topColor === 0xD9252B && bottomColor === 0xFFFFFF) {
+            this.time.delayedCall(1500, () => { 
+                this.registry.set('level1Cleared', true);
+                localStorage.setItem('level1Cleared', 'true');
+                alert("BENAR! HEBAT! 🎉");
+                this.scene.start('level');
+            });
         }
-        
-        // Masking (Biar rapi gak keluar kotak)
-        const maskShape = this.make.graphics();
-        maskShape.fillStyle(0xffffff);
-        maskShape.fillRect(x - w/2, y - h/2, w, h);
-        const mask = maskShape.createGeometryMask();
-        graphics.setMask(mask);
-        
-        return graphics;
-    };
-
-
-    // --- AREA 1: BAGIAN ATAS (TARGET: MERAH) ---
-    const topY = boardY - (halfHeight / 2);
-    
-    // Visual Arsiran
-    const stripesTop = createStripes(boardX, topY, flagW, halfHeight);
-    
-    // Zona Klik
-    const zoneTop = this.add.rectangle(boardX, topY, flagW, halfHeight, 0xFFFFFF)
-        .setInteractive({ useHandCursor: true })
-        .setAlpha(0.01); // Hampir transparan
-
-
-    // --- AREA 2: BAGIAN BAWAH (TARGET: PUTIH) ---
-    const bottomY = boardY + (halfHeight / 2);
-
-    // Visual Arsiran
-    const stripesBottom = createStripes(boardX, bottomY, flagW, halfHeight);
-
-    // Zona Klik
-    const zoneBottom = this.add.rectangle(boardX, bottomY, flagW, halfHeight, 0xFFFFFF)
-        .setInteractive({ useHandCursor: true })
-        .setAlpha(0.01);
-
-
-    // --- 🔥 GARIS HITAM PEMISAH (SUDAH DITIPISIN) 🔥 ---
-    // Tinggi cuma 3px (sebelumnya 6px)
-    this.add.rectangle(boardX, boardY, flagW, 3, 0x000000).setDepth(10);
-    
-    // TAMBAHAN: Garis Pinggir Kotak (Outline) biar rapi
-    this.add.rectangle(boardX, boardY, flagW, flagH).setStrokeStyle(3, 0x000000);
-
-
-    // --- LOGIC KLIK & MEWARNAI ---
-    const paintZone = (zone, stripesObj) => {
-        if (this.selectedColor !== null) {
-            
-            // 1. Hapus arsiran
-            if(stripesObj.active) stripesObj.destroy(); 
-            
-            // 2. Warnai
-            zone.setFillStyle(this.selectedColor);
-            zone.setAlpha(1); // Jadi Solid
-            
-            // 3. Simpan Data
-            zone.setData('colorCode', this.selectedColor);
-            
-            // 4. Efek 'Boing'
-            this.tweens.add({ targets: zone, scale: 1.02, duration: 100, yoyo: true });
-
-            // 5. Cek Menang
-            this.checkWinCondition(zoneTop, zoneBottom);
-        } else {
-            // Goyang kalau belum pilih warna
-            this.tweens.add({ targets: zone, x: zone.x + 5, duration: 50, yoyo: true, repeat: 3 });
-        }
-    };
-
-    zoneTop.on('pointerdown', () => paintZone(zoneTop, stripesTop));
-    zoneBottom.on('pointerdown', () => paintZone(zoneBottom, stripesBottom));
-
-
-    // ================= UI ELEMENTS =================
-
-    // 1. TOMBOL BACK (Kiri Atas - Disesuaikan)
-    const btnBack = this.add.image(60, 60, 'btnBack').setScale(0.12).setInteractive(); 
-    btnBack.on('pointerdown', () => this.scene.start('level'));
-
-    // 2. PALET WARNA (Kanan - Posisi Aman)
-    const pMerah = this.add.image(width - 100, height/1.5 - 10, 'paletMerah').setInteractive().setScale(0.8);
-    pMerah.on('pointerdown', () => {
-        this.selectedColor = 0xD9252B; // Merah Bendera Indonesia
-        this.updateBrushColor(0xD9252B);
-        this.tweens.add({ targets: pMerah, scale: 0.9, duration: 100, yoyo: true });
-    });
-
-    const pPutih = this.add.image(width - 100, height/1.8 + 10, 'paletPutih').setInteractive().setScale(0.8);
-    pPutih.on('pointerdown', () => {
-        this.selectedColor = 0xFFFFFF; // Putih
-        this.updateBrushColor(0xFFFFFF);
-        this.tweens.add({ targets: pPutih, scale: 0.9, duration: 100, yoyo: true });
-    });
-
-    // 3. INDIKATOR KUAS (Kanan Bawah)
-    this.add.image(width - 120, height - 100, 'bgKuas').setScale(0.7);
-    this.brushIcon = this.add.image(width - 120, height - 100, 'iconKuas').setScale(0.7);
-
-    // 4. JUDUL NEGARA (Kanan Atas)
-    // Background Teks
-    this.add.rectangle(width - 200, 100, 250, 40, 0xFFFFFF).setStrokeStyle(2, 0x000000);
-    this.add.text(width - 200, 100, 'INDONESIA', {
-        fontSize: '24px', color: '#000000', fontStyle: 'bold'
-    }).setOrigin(0.5);
-
-    // Timer Bar
-    const timerFill = this.add.rectangle(width - 325, 60, 250, 15, 0xFF0000).setOrigin(0, 0.5);
-    this.tweens.add({ targets: timerFill, scaleX: 0, duration: 30000, ease: 'Linear' });
-
-    // 5. TOMBOL HINT (Kiri Bawah)
-    this.add.image(60, height - 60, 'btnHint').setInteractive().setScale(0.8)
-        .on('pointerdown', () => alert("Atas Merah, Bawah Putih!"));
-
-  } 
-
-
-  // --- FUNGSI PENDUKUNG ---
-  updateBrushColor(color) {
-      this.brushIcon.setTint(color);
-  }
-
-  checkWinCondition(zoneTop, zoneBottom) {
-      const topColor = zoneTop.getData('colorCode');
-      const bottomColor = zoneBottom.getData('colorCode');
-
-      // Cek Merah (0xD9252B) dan Putih (0xFFFFFF)
-      if (topColor === 0xD9252B && bottomColor === 0xFFFFFF) {
-          this.time.delayedCall(500, () => {
-              this.registry.set('level1Cleared', true);
-              localStorage.setItem('level1Cleared', 'true');
-              alert("BENAR! HEBAT! 🎉");
-              this.scene.start('level');
-          });
-      }
-  }
+    }
 }
