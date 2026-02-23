@@ -1,6 +1,6 @@
-class gameplayScene extends Phaser.Scene {
+class gameplayScene1 extends Phaser.Scene {
     constructor() {
-        super('gameplay');
+        super('gameplay1');
     }
 
     preload() {
@@ -250,6 +250,7 @@ class gameplayScene extends Phaser.Scene {
 
         if (topColor === 0xD9252B && bottomColor === 0xFFFFFF) {
             this.time.delayedCall(1500, () => { 
+                 this.levelComplete();
                 this.registry.set('level1Cleared', true);
                 localStorage.setItem('level1Cleared', 'true');
                 alert("BENAR! HEBAT! 🎉");
@@ -257,4 +258,19 @@ class gameplayScene extends Phaser.Scene {
             });
         }
     }
+
+  levelComplete() {
+    const levelData = JSON.parse(localStorage.getItem('levelData'));
+
+    levelData[1] = 2; // level 1 selesai
+    levelData[2] = 1; // buka level 2
+
+    localStorage.setItem('levelData', JSON.stringify(levelData));
+
+    this.scene.start('level');
+  }
+
 }
+
+
+
