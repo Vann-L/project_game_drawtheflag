@@ -100,7 +100,7 @@ const config = {
     // 🔥 CENTER: Game otomatis di tengah-tengah
     autoCenter: Phaser.Scale.CENTER_BOTH 
   },
- scene: [menuScene, levelScene, gameplayScene],
+ scene: [menuScene, levelScene, gameplayScene1],
 };
 
 new Phaser.Game(config);
