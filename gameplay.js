@@ -1,6 +1,6 @@
-class gameplayScene extends Phaser.Scene {
+class gameplayScene1 extends Phaser.Scene {
     constructor() {
-        super('gameplay');
+        super('gameplay1');
     }
 
     preload() {
@@ -81,9 +81,6 @@ class gameplayScene extends Phaser.Scene {
 
 
         // ==================================================================
-        // 🔥 LOGIC MEWARNAI: ORGANIC BRUSH (REALISTIC FEEL) 🔥
-        // ==================================================================
-        // ==================================================================
         // 🔥 LOGIC MEWARNAI: "LIQUID FILL" (PASTI PENUH & SMOOTH) 🔥
         // ==================================================================
         const paintZone = (zone, stripesObj) => {
@@ -111,7 +108,7 @@ class gameplayScene extends Phaser.Scene {
 
             // --- KOORDINAT ---
             const startX = zone.x - zone.width / 2; // Kiri
-            const startY = zone.y;                 // Tengah Vertical
+            const startY = zone.y;                // Tengah Vertical
             const zoneW = zone.width;
             const zoneH = zone.height;
 
@@ -145,24 +142,20 @@ class gameplayScene extends Phaser.Scene {
                         // 1. HITUNG POSISI 'KEPALA' KUAS
                         const currentX = startX + (animData.progress * zoneW);
                         
-                        // Sedikit goyangan vertikal biar 'hidup' (nggak lurus robot)
+                        // Sedikit goyangan vertikal biar 'hidup'
                         const wobble = Math.sin(animData.progress * 15) * 10;
                         const currentY = startY + wobble;
 
-                        // 2. GAMBAR EKOR (AREA YANG SUDAH DICAT) - KOTAK SOLID
-                        // Ini rahasianya: Kita gambar kotak dari Kiri mentok sampai posisi X sekarang.
-                        // Tingginya kita buat 'zoneH + 50' (lebih gede dari area) biar PASTI KECAT SEMUA.
+                        // 2. GAMBAR EKOR (AREA YANG SUDAH DICAT)
                         paintGraphics.fillRect(startX, startY - zoneH/2 - 10, (currentX - startX), zoneH + 20);
 
                         // 3. GAMBAR KEPALA KUAS (BULATAN)
-                        // Biar ujungnya nggak kotak rata, kita kasih lingkaran di posisi X
-                        // Ukurannya ngikutin tinggi zona biar pas sekali usap
                         const brushHeadSize = zoneH / 2 + 10; 
                         paintGraphics.fillCircle(currentX, currentY, brushHeadSize);
 
                         // 4. UPDATE VISUAL ICON KUAS
-                        this.brushIcon.x = currentX + 30; // Icon agak maju dikit
-                        this.brushIcon.y = currentY - 40; // Icon agak naik (seolah megang gagang)
+                        this.brushIcon.x = currentX + 30;
+                        this.brushIcon.y = currentY - 40;
                         
                         // Rotasi goyang dikit pas ngecat
                         this.brushIcon.setAngle(-20 + Math.cos(animData.progress * 20) * 10);
@@ -170,7 +163,6 @@ class gameplayScene extends Phaser.Scene {
 
                     onComplete: () => {
                         // --- FINISHING ---
-                        
                         // Balikin Kuas
                         this.tweens.add({
                             targets: this.brushIcon,
@@ -188,7 +180,7 @@ class gameplayScene extends Phaser.Scene {
                         zone.setFillStyle(this.selectedColor);
                         zone.setAlpha(1);
                         
-                        // Bersihkan Graphics (Karena zona udah berwarna, graphic gak perlu lagi)
+                        // Bersihkan Graphics
                         paintGraphics.destroy();
                         maskShape.destroy();
 
@@ -250,11 +242,23 @@ class gameplayScene extends Phaser.Scene {
 
         if (topColor === 0xD9252B && bottomColor === 0xFFFFFF) {
             this.time.delayedCall(1500, () => { 
+                this.levelComplete();
                 this.registry.set('level1Cleared', true);
                 localStorage.setItem('level1Cleared', 'true');
                 alert("BENAR! HEBAT! 🎉");
-                this.scene.start('level');
             });
         }
+    }
+
+    levelComplete() {
+        let levelDataStr = localStorage.getItem('levelData');
+        let levelData = levelDataStr ? JSON.parse(levelDataStr) : {}; // Tambahan keamanan jika levelData belum ada
+        
+        levelData[1] = 2; // level 1 selesai
+        levelData[2] = 1; // buka level 2
+
+        localStorage.setItem('levelData', JSON.stringify(levelData));
+
+        this.scene.start('level');
     }
 }
