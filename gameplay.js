@@ -12,6 +12,18 @@ class gameplayScene1 extends Phaser.Scene {
         this.load.image('paletPutih', 'asset/paletputih.png');
         this.load.image('bgKuas', 'asset/penampungkuas.png');
         this.load.image('iconKuas', 'asset/kuas.png');
+        this.load.image('iconjam', 'asset/ICON JAM.png');
+
+        this.load.image('winBG', 'asset/ANIMASI MENANG.png');
+        this.load.image('btnHome', 'asset/home.png');
+        this.load.image('btnReplay', 'asset/ulang.png');
+        this.load.image('btnNext', 'asset/next.png');
+        this.load.image('flagIndonesia', 'asset/bendera_indonesia.png');
+
+        this.load.image('loseText', 'asset/tulisan_kalah.png');
+        this.load.image('iconX', 'asset/x.png');
+        this.load.image('btnReplayLose', 'asset/replay_kalah.png');
+        this.load.image('btnHomeLose', 'asset/home_kalah.png');
     }
 
     create() {
@@ -19,6 +31,8 @@ class gameplayScene1 extends Phaser.Scene {
 
         // 1. PASANG BACKGROUND
         this.add.image(width / 2, height / 2, 'bgBoard').setDisplaySize(width, height);
+
+        
 
         // ==================================================================
         // 🔥 PENGATURAN POSISI & UKURAN 🔥
@@ -220,13 +234,144 @@ class gameplayScene1 extends Phaser.Scene {
         });
 
         // Judul & Timer
-        this.add.rectangle(width - 200, 100, 250, 40, 0xFFFFFF).setStrokeStyle(2, 0x000000);
-        this.add.text(width - 200, 100, 'INDONESIA', {
-            fontSize: '24px', color: '#000000', fontStyle: 'bold'
-        }).setOrigin(0.5);
+   // ================= JUDUL NEGARA =================
 
-        const timerFill = this.add.rectangle(width - 325, 60, 250, 15, 0xFF0000).setOrigin(0, 0.5);
-        this.tweens.add({ targets: timerFill, scaleX: 0, duration: 30000, ease: 'Linear' });
+const titleScale = 0.46; // ubah ini saja untuk besar / kecil
+
+const titleWidth = 650 * titleScale;
+const titleHeight = 60 * titleScale;
+
+const titleX = width - 202;
+const titleY = 102;
+
+const titleOuter = this.add.graphics();
+
+// FRAME LUAR
+titleOuter.fillStyle(0xffffff, 1);
+titleOuter.fillRoundedRect(
+    titleX - titleWidth/2 - (6 * titleScale),
+    titleY - titleHeight/2 - (6 * titleScale),
+    titleWidth + (12 * titleScale),
+    titleHeight + (12 * titleScale),
+    30 * titleScale
+);
+
+// BORDER HITAM
+titleOuter.lineStyle(4 * titleScale, 0x000000);
+titleOuter.strokeRoundedRect(
+    titleX - titleWidth/2,
+    titleY - titleHeight/2,
+    titleWidth,
+    titleHeight,
+    25 * titleScale
+);
+
+// TEXT
+this.add.text(titleX, titleY, 'INDONESIA', {
+    fontSize: (32 * titleScale) + 'px',
+    fontFamily: 'Arial',
+    color: '#000000',
+    fontStyle: 'bold'
+}).setOrigin(0.5);
+// ================= TIMER =================
+
+const timerScale = 0.85; // ubah ini kalau mau lebih kecil / besar
+
+const barWidth = 300 * timerScale;
+const barHeight = 22 * timerScale;
+
+const barX = width - 347;
+const barY = 60;
+
+// ICON JAM
+this.add.image(barX + barWidth + (40 * timerScale), barY, 'iconjam')
+.setScale(0.1 * timerScale);
+
+// FRAME LUAR
+const frame = this.add.graphics();
+frame.fillStyle(0xffffff, 1);
+frame.lineStyle(2, 0xffffff);
+
+frame.fillRoundedRect(
+    barX - (6 * timerScale),
+    barY - (16 * timerScale),
+    barWidth + (12 * timerScale),
+    32 * timerScale,
+    16 * timerScale
+);
+
+frame.strokeRoundedRect(
+    barX - (6 * timerScale),
+    barY - (16 * timerScale),
+    barWidth + (12 * timerScale),
+    32 * timerScale,
+    16 * timerScale
+);
+
+// BACKGROUND TIMER
+const timerBG = this.add.graphics();
+timerBG.fillStyle(0xffffff, 1);
+timerBG.lineStyle(2, 0x000000);
+
+timerBG.fillRoundedRect(
+    barX,
+    barY - barHeight/2,
+    barWidth,
+    barHeight,
+    12 * timerScale
+);
+
+timerBG.strokeRoundedRect(
+    barX,
+    barY - barHeight/2,
+    barWidth,
+    barHeight,
+    12 * timerScale
+);
+
+// PROGRESS MERAH
+const timerFill = this.add.graphics();
+
+// MASK
+const maskShape = this.make.graphics();
+maskShape.fillStyle(0xffffff);
+maskShape.fillRoundedRect(
+    barX,
+    barY - barHeight/2,
+    barWidth,
+    barHeight,
+    12 * timerScale
+);
+
+const mask = maskShape.createGeometryMask();
+timerFill.setMask(mask);
+
+const timerData = { value: 1 };
+
+this.timerTween = this.tweens.add({
+    targets: timerData,
+    value: 0,
+    duration: 10000,
+    ease: 'Linear',
+
+    onUpdate: () => {
+
+        timerFill.clear();
+        timerFill.fillStyle(0xF21B1B, 1);
+
+        timerFill.fillRoundedRect(
+            barX,
+            barY - barHeight/2,
+            barWidth * timerData.value,
+            barHeight,
+            12 * timerScale
+        );
+    },
+
+    onComplete: () => {
+       this.showLoseScreen();
+    }
+});
 
         this.add.image(60, height - 60, 'btnHint').setInteractive().setScale(0.8)
             .on('pointerdown', () => alert("Atas Merah, Bawah Putih!"));
@@ -236,29 +381,187 @@ class gameplayScene1 extends Phaser.Scene {
         this.brushIcon.setTint(color);
     }
 
-    checkWinCondition(zoneTop, zoneBottom) {
-        const topColor = zoneTop.getData('colorCode');
-        const bottomColor = zoneBottom.getData('colorCode');
+   checkWinCondition(zoneTop, zoneBottom) {
+    const topColor = zoneTop.getData('colorCode');
+    const bottomColor = zoneBottom.getData('colorCode');
 
-        if (topColor === 0xD9252B && bottomColor === 0xFFFFFF) {
-            this.time.delayedCall(1500, () => { 
-                this.levelComplete();
-                this.registry.set('level1Cleared', true);
-                localStorage.setItem('level1Cleared', 'true');
-                alert("BENAR! HEBAT! 🎉");
-            });
+    if (topColor === 0xD9252B && bottomColor === 0xFFFFFF) {
+
+         // 🔥 STOP TIMER
+        if (this.timerTween) {
+            this.timerTween.stop();
         }
-    }
 
-    levelComplete() {
-        let levelDataStr = localStorage.getItem('levelData');
-        let levelData = levelDataStr ? JSON.parse(levelDataStr) : {}; // Tambahan keamanan jika levelData belum ada
-        
-        levelData[1] = 2; // level 1 selesai
-        levelData[2] = 1; // buka level 2
+        this.time.delayedCall(500, () => { 
+            this.showWinScreen();
+        });
+
+    }
+}
+
+showWinScreen() {
+
+    const { width, height } = this.scale;
+
+    // ===== POSISI MANUAL =====
+    const bgX = 670;
+    const bgY = 130;
+
+    const flagX = 660;
+    const flagY = 373;
+
+    const replayX = 500;
+    const replayY = 610;
+
+    const homeX = 660;
+    const homeY = 610;
+
+    const nextX = 820;
+    const nextY = 610;
+
+    // ===== UKURAN =====
+    const bgScale = 0.25;
+    const flagScale = 1.37;
+    const btnScale = 0.28;
+
+
+    // overlay hitam
+    this.add.rectangle(width/2, height/2, width, height, 0x000000)
+        .setAlpha(0.5)
+        .setDepth(199)
+        .setInteractive();
+
+    // background menang
+    this.add.image(bgX, bgY, 'winBG')
+        .setDepth(200)
+        .setScale(bgScale);
+
+    // bendera
+    this.add.image(flagX, flagY, 'flagIndonesia')
+        .setDepth(201)
+        .setScale(flagScale);
+
+    // tombol replay
+    const replay = this.add.image(replayX, replayY, 'btnReplay')
+        .setInteractive()
+        .setDepth(202)
+        .setScale(btnScale);
+
+    // tombol home
+    const home = this.add.image(homeX, homeY, 'btnHome')
+        .setInteractive()
+        .setDepth(202)
+        .setScale(btnScale);
+
+    // tombol next
+    const next = this.add.image(nextX, nextY, 'btnNext')
+        .setInteractive()
+        .setDepth(202)
+        .setScale(btnScale);
+
+
+    replay.on('pointerdown', () => {
+  let levelDataStr = localStorage.getItem('levelData');
+        let levelData = levelDataStr ? JSON.parse(levelDataStr) : {};
+
+        levelData[1] = 2;
+        levelData[2] = 1;
+
+        localStorage.setItem('levelData', JSON.stringify(levelData));
+
+        this.scene.restart();
+    });
+
+    home.on('pointerdown', () => {
+  let levelDataStr = localStorage.getItem('levelData');
+        let levelData = levelDataStr ? JSON.parse(levelDataStr) : {};
+
+        levelData[1] = 2;
+        levelData[2] = 1;
 
         localStorage.setItem('levelData', JSON.stringify(levelData));
 
         this.scene.start('level');
-    }
+    });
+
+    next.on('pointerdown', () => {
+
+        let levelDataStr = localStorage.getItem('levelData');
+        let levelData = levelDataStr ? JSON.parse(levelDataStr) : {};
+
+        levelData[1] = 2;
+        levelData[2] = 1;
+
+        localStorage.setItem('levelData', JSON.stringify(levelData));
+
+        this.scene.start('gameplay2');
+    });
+
+}
+
+showLoseScreen() {
+
+    const { width, height } = this.scale;
+
+    // STOP GAME
+    this.gameOver = true;
+    this.tweens.killAll();
+    
+
+    // ===== POSISI =====
+    const textX = 660;
+    const textY = 128;
+
+    const xIconX = 660;
+    const xIconY = 372;
+
+    const replayX = 565;
+    const replayY = 615;
+
+    const homeX = 755;
+    const homeY = 615;
+
+    const textScale = 0.25;
+    const xScale = 1.37;
+    const btnScale = 0.28;
+
+    // overlay
+    const blocker = this.add.rectangle(width/2, height/2, width, height, 0x000000)
+        .setAlpha(0.6)
+        .setDepth(500)
+        .setInteractive();
+
+    blocker.on('pointerdown', () => {});
+
+    // tulisan kalah
+    this.add.image(textX, textY, 'loseText')
+        .setDepth(501)
+        .setScale(textScale);
+
+    // icon X
+    this.add.image(xIconX, xIconY, 'iconX')
+        .setDepth(501)
+        .setScale(xScale);
+
+    // tombol replay
+    const replay = this.add.image(replayX, replayY, 'btnReplayLose')
+        .setInteractive()
+        .setDepth(502)
+        .setScale(btnScale);
+
+    // tombol home
+    const home = this.add.image(homeX, homeY, 'btnHomeLose')
+        .setInteractive()
+        .setDepth(502)
+        .setScale(btnScale);
+
+    replay.on('pointerdown', () => {
+        this.scene.restart();
+    });
+
+    home.on('pointerdown', () => {
+        this.scene.start('level');
+    });
+
+}
 }
