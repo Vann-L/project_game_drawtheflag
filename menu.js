@@ -15,10 +15,19 @@ class menuScene extends Phaser.Scene {
     this.load.image('char_thinking', 'asset/thingking.png');
     this.load.image('char_goodluck', 'asset/goodluck.png');
 
+    // 🔥 PRELOAD 3 ASET TUTORIAL BARU
+    this.load.image('tutorial_img', 'asset/tutorial.png');
+    this.load.image('tutorial2_img', 'asset/tutorial2.png');
+    this.load.image('tutorial3_img', 'asset/tutorial3.png');
+    this.load.image('pointer', 'asset/telunjuk.png');
+
     // SFX & BGM
     this.load.audio('sfx_pop', 'asset/pop.mp3');
     this.load.audio('bgm_menu', 'asset/bossanova.mp3');
     this.load.audio('sfx_transition', 'asset/transisi.mp3');
+    
+    // 🔥 PRELOAD SFX BARU UNTUK POINTER
+    this.load.audio('sfx_woosh', 'asset/woosh.mp3'); 
   }
 
   create() {
@@ -76,90 +85,122 @@ class menuScene extends Phaser.Scene {
       .setDepth(12).setAlpha(0);
     this.tweens.add({ targets: this.nextIndicator, y: height - 55, duration: 400, yoyo: true, repeat: -1 });
 
-    // 🔥 TOMBOL SKIP (UI CUSTOM, LEBIH CAKEP)
-    // Container untuk nyatuin background dan teks tombol
-    this.skipContainer = this.add.container(width - 120, 50).setDepth(21).setAlpha(0);
+    // 🔥 4.5 SETUP UI POPUP TUTORIAL LENGKAP
+    this.tutorialContainer = this.add.container(width / 2 + 166, height / 2 - 80).setDepth(10.5).setAlpha(0);
     
-    // Background tombol (Rounded Rectangle)
+    this.tutImage = this.add.image(0, 40, 'tutorial_img').setScale(0.4);
+    
+    this.bubbleContainer = this.add.container(-300, 20); 
+
+    this.tutTextBg = this.add.graphics();
+    this.tutTextBg.fillStyle(0xffffff, 1); 
+    this.tutTextBg.fillRoundedRect(-140, -25, 280, 50, 25); 
+    this.tutTextBg.lineStyle(4, 0x000000, 1); 
+    this.tutTextBg.strokeRoundedRect(-140, -25, 280, 50, 25);
+    
+    this.tutText = this.add.text(0, 0, '', { 
+        fontSize: '22px', fontFamily: 'Arial', color: '#000000', fontStyle: 'bold' 
+    }).setOrigin(0.5);
+
+    this.bubbleContainer.add([this.tutTextBg, this.tutText]);
+
+    this.tutPointer = this.add.image(0, 0, 'pointer').setScale(0.06); 
+    this.pointerBounceTween = null; 
+
+    this.tutorialContainer.add([this.tutImage, this.bubbleContainer, this.tutPointer]);
+
+    // 🔥 TOMBOL SKIP (UI CUSTOM)
+    this.skipContainer = this.add.container(width - 120, 50).setDepth(21).setAlpha(0);
     const skipBg = this.add.graphics();
-    skipBg.fillStyle(0x333333, 1);
-    skipBg.fillRoundedRect(-60, -25, 120, 50, 25); // x, y, width, height, radius
+    skipBg.fillStyle(0x000000, 1);
+    skipBg.fillRoundedRect(-60, -25, 120, 50, 25); 
     skipBg.lineStyle(3, 0xffffff, 1);
     skipBg.strokeRoundedRect(-60, -25, 120, 50, 25);
-    
-    // Teks tombol
     const skipText = this.add.text(0, 0, 'Skip ⏭', { 
         fontSize: '22px', fontFamily: 'Arial', color: '#ffffff', fontStyle: 'bold' 
     }).setOrigin(0.5);
-
     this.skipContainer.add([skipBg, skipText]);
-
-    // Area interaktif (Zone) buat tombol Skip
     this.skipZone = this.add.zone(width - 120, 50, 120, 50).setInteractive({ useHandCursor: true }).setDepth(22).setActive(false);
-
-    // Hover Effect Skip
     this.skipZone.on('pointerover', () => { skipBg.clear().fillStyle(0x555555, 1).fillRoundedRect(-60, -25, 120, 50, 25).lineStyle(3, 0xffffff, 1).strokeRoundedRect(-60, -25, 120, 50, 25); });
-    this.skipZone.on('pointerout', () => { skipBg.clear().fillStyle(0x333333, 1).fillRoundedRect(-60, -25, 120, 50, 25).lineStyle(3, 0xffffff, 1).strokeRoundedRect(-60, -25, 120, 50, 25); });
-
+    this.skipZone.on('pointerout', () => { skipBg.clear().fillStyle(0x000000, 1).fillRoundedRect(-60, -25, 120, 50, 25).lineStyle(3, 0xffffff, 1).strokeRoundedRect(-60, -25, 120, 50, 25); });
     this.introClickZone = this.add.zone(width / 2, height / 2, width, height).setInteractive({ useHandCursor: true }).setDepth(20).setActive(false).setVisible(false);
 
-    // ==========================================================
-    // 🔥 5. SETUP POP-UP KONFIRMASI (UI LEBIH MODERN)
-    // ==========================================================
-    this.confirmBlocker = this.add.rectangle(width/2, height/2, width, height, 0x000000, 0.7)
-      .setDepth(30).setInteractive().setVisible(false);
-
-    // Container buat Pop-up
-    this.confirmContainer = this.add.container(width/2, height/2).setDepth(31).setVisible(false).setScale(0.8); // Scale awal kecil buat efek pop
-
-    // Background Pop-up (Rounded & Shadow)
+    // 🔥 5. SETUP POP-UP KONFIRMASI
+    this.confirmBlocker = this.add.rectangle(width/2, height/2, width, height, 0x000000, 0.7).setDepth(30).setInteractive().setVisible(false);
+    this.confirmContainer = this.add.container(width/2, height/2).setDepth(31).setVisible(false).setScale(0.8);
     const confirmBgShadow = this.add.graphics();
     confirmBgShadow.fillStyle(0x000000, 0.5);
-    confirmBgShadow.fillRoundedRect(-245, -95, 500, 200, 20); // Shadow offset sedikit ke kanan bawah
-    
+    confirmBgShadow.fillRoundedRect(-245, -95, 500, 200, 20); 
     const confirmBg = this.add.graphics();
     confirmBg.fillStyle(0x1a1a1a, 1);
     confirmBg.fillRoundedRect(-250, -100, 500, 200, 20);
     confirmBg.lineStyle(4, 0xaaaaaa, 1);
     confirmBg.strokeRoundedRect(-250, -100, 500, 200, 20);
-
-    const confirmText = this.add.text(0, -30, 'Yakin ingin melewati panduan?', {
-      fontSize: '26px', fontFamily: 'Arial', color: '#ffffff'
-    }).setOrigin(0.5);
-
-    // Tombol YA
+    const confirmTextData = this.add.text(0, -30, 'Yakin ingin melewati panduan?', { fontSize: '26px', fontFamily: 'Arial', color: '#ffffff' }).setOrigin(0.5);
     const btnYesBg = this.add.graphics();
     btnYesBg.fillStyle(0x4CAF50, 1).fillRoundedRect(-60, -25, 120, 50, 25);
     const btnYesText = this.add.text(0, 0, 'YA', { fontSize: '22px', fontFamily: 'Arial', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
     const btnYesContainer = this.add.container(-80, 45, [btnYesBg, btnYesText]);
     const btnYesZone = this.add.zone(-80, 45, 120, 50).setInteractive({ useHandCursor: true });
-    
-    // Hover Tombol YA
     btnYesZone.on('pointerover', () => { btnYesBg.clear().fillStyle(0x66BB6A, 1).fillRoundedRect(-60, -25, 120, 50, 25); });
     btnYesZone.on('pointerout', () => { btnYesBg.clear().fillStyle(0x4CAF50, 1).fillRoundedRect(-60, -25, 120, 50, 25); });
-
-    // Tombol TIDAK
     const btnNoBg = this.add.graphics();
     btnNoBg.fillStyle(0xF44336, 1).fillRoundedRect(-60, -25, 120, 50, 25);
     const btnNoText = this.add.text(0, 0, 'TIDAK', { fontSize: '22px', fontFamily: 'Arial', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
     const btnNoContainer = this.add.container(80, 45, [btnNoBg, btnNoText]);
     const btnNoZone = this.add.zone(80, 45, 120, 50).setInteractive({ useHandCursor: true });
-
-    // Hover Tombol TIDAK
     btnNoZone.on('pointerover', () => { btnNoBg.clear().fillStyle(0xEF5350, 1).fillRoundedRect(-60, -25, 120, 50, 25); });
     btnNoZone.on('pointerout', () => { btnNoBg.clear().fillStyle(0xF44336, 1).fillRoundedRect(-60, -25, 120, 50, 25); });
-
-    // Masukin semua ke container utama pop-up
-    this.confirmContainer.add([confirmBgShadow, confirmBg, confirmText, btnYesContainer, btnNoContainer, btnYesZone, btnNoZone]);
+    this.confirmContainer.add([confirmBgShadow, confirmBg, confirmTextData, btnYesContainer, btnNoContainer, btnYesZone, btnNoZone]);
 
     // ==========================================================
-    // === DATA CERITA ===
+    // === DATA CERITA (DENGAN PENGATURAN UKURAN & POINTER) ===
+    // ==========================================================
     this.storyData = [
-      { text: "Halo Seniman! Selamat datang di World Flag Studio.", sprite: 'char_welcome' },
-      { text: "Perkenalkan, aku yang akan memandumu di misi penting ini.", sprite: 'char_intro' },
-      { text: "Seperti yang kamu lihat, banyak bendera di dunia tiba-tiba kehilangan warnanya...", sprite: 'char_explain' },
-      { text: "Hmm... aneh sekali ya? Siapa yang tega melakukan hal sejahat ini?", sprite: 'char_thinking' },
-      { text: "Tapi aku yakin kamu bisa mengembalikan warna mereka semua. Semoga berhasil, Seniman!", sprite: 'char_goodluck' }
+      { text: "Halo Seniman! Selamat datang di Draw The Flag.", sprite: 'char_welcome' },
+      { text: "Perkenalkan, aku Pemandu Misi. Aku yang akan menemani perjalananmu di dunia yang penuh warna ini.", sprite: 'char_intro' },
+      { text: "Tapi tunggu... ada yang aneh. Akhir-akhir ini, banyak bendera negara kehilangan warnanya secara misterius.", sprite: 'char_thinking' },
+      { text: "Tanpa warna, identitas negara-negara itu menghilang! Kita tidak bisa membiarkan kekacauan ini terjadi.", sprite: 'char_explain' },
+      { text: "Di sinilah misimu dimulai! Kembalikan identitas negara-negara tersebut dengan mewarnai kembali bendera mereka yang telah memudar.", sprite: 'char_explain' },
+      
+      // 🔥 TUTORIAL 1: MEMILIH WARNA (GAMBAR 1)
+      { 
+        text: "Pertama, pilih warna yang tepat dari palet. Sebagai contoh, aku membutuhkan warna merah.", 
+        sprite: 'char_explain',
+        showTutorial: true, 
+        tutImageKey: 'tutorial_img', 
+        imageScale: 0.4,       
+        pointerText: "1. Pilih Palet Warna",
+        pointerX: 310,         
+        pointerY: 80          
+      },
+      
+      // 🔥 TUTORIAL 2: MENGECAT CANVAS (GAMBAR 2)
+      { 
+        text: "Kedua, klik pada bagian kanvas bendera yang kosong untuk mewarnainya sesuai warnanya.", 
+        sprite: 'char_explain',
+        showTutorial: true, 
+        tutImageKey: 'tutorial2_img', 
+        imageScale: 0.4,       
+        pointerText: "2. Warnai Canvas",
+        pointerX: -50,
+        pointerY: 0
+      },
+
+      // 🔥 TUTORIAL 3: PERHATIKAN WAKTU (GAMBAR 3)
+      { 
+        text: "Ketiga, perhatikan batas waktu di atas! Jika waktu habis sebelum bendera selesai, kamu kalah.", 
+        sprite: 'char_thinking',
+        showTutorial: true, 
+        tutImageKey: 'tutorial2_img', // Sesuai kode lu sebelumnya pake tutorial2_img
+        imageScale: 0.8,       
+        pointerText: "3. Perhatikan Waktu!",
+        pointerX: 175,           
+        pointerY: -140         
+      },
+      
+      { text: "Hati-hati dan perhatikan posisinya ya! Jangan sampai warnanya tertukar atau salah tempat.", sprite: 'char_thinking' },
+      { text: "Aku sangat percaya pada kemampuan senimu untuk menyelamatkan dunia ini. Selamat bermain, Seniman!", sprite: 'char_goodluck' }
     ];
     this.currentStoryIndex = 0;
     this.isTyping = false;
@@ -171,7 +212,6 @@ class menuScene extends Phaser.Scene {
       this.startIntro();
     });
 
-    // LOGIKA SKIP DENGAN KONFIRMASI
     this.skipZone.on('pointerdown', () => {
       this.introClickZone.disableInteractive();
       this.toggleConfirmDialog(true);
@@ -187,7 +227,6 @@ class menuScene extends Phaser.Scene {
       this.introClickZone.setInteractive({ useHandCursor: true }); 
     });
 
-    // Logika Baca Teks Normal
     this.introClickZone.on('pointerdown', () => {
       if (this.isTyping) {
         if (this.timer) this.timer.destroy();
@@ -206,31 +245,20 @@ class menuScene extends Phaser.Scene {
     });
   }
 
-  // === FUNGSI BANTUAN POPUP KONFIRMASI ===
   toggleConfirmDialog(show) {
     this.confirmBlocker.setVisible(show);
     this.confirmContainer.setVisible(show);
-    
-    // Efek Pop in / out
     if(show) {
         this.tweens.add({ targets: this.confirmContainer, scale: 1, duration: 200, ease: 'Back.out' });
     } else {
-        this.confirmContainer.setScale(0.8); // Reset
+        this.confirmContainer.setScale(0.8); 
     }
   }
 
-  // === FUNGSI-FUNGSI UTAMA ===
   startIntro() {
     this.introClickZone.setActive(true).setVisible(true);
-    this.skipZone.setActive(true); // Aktifin tombol skip
-    
-    this.tweens.add({
-      targets: this.bgm,
-      volume: 0.2, 
-      duration: 1000,
-      ease: 'Sine.easeInOut'
-    });
-
+    this.skipZone.setActive(true); 
+    this.tweens.add({ targets: this.bgm, volume: 0.2, duration: 1000, ease: 'Sine.easeInOut' });
     this.tweens.add({
       targets: [this.overlay, this.character, this.dialogBox, this.dialogText, this.nameBox, this.nameText, this.skipContainer],
       alpha: 1, duration: 500,
@@ -244,9 +272,81 @@ class menuScene extends Phaser.Scene {
   showDialog() {
     const currentData = this.storyData[this.currentStoryIndex];
     this.nextIndicator.setAlpha(0); 
-
     this.sound.play('sfx_pop', { volume: 0.6 });
 
+    // === LOGIKA TUTORIAL VISUAL & TRANSISI GAMBAR ===
+    if (currentData.showTutorial) {
+        // 1. Kalo container tutorial masih ngumpet (pertama kali muncul)
+        if (this.tutorialContainer.alpha === 0) {
+            this.tutImage.setTexture(currentData.tutImageKey); 
+            this.tutImage.setScale(currentData.imageScale); 
+            
+            // Set posisi pointer awal dan mainin suara woosh pertama
+            this.tutPointer.setPosition(currentData.pointerX, currentData.pointerY);            
+            this.tweens.add({ targets: this.tutorialContainer, alpha: 1, duration: 300 });
+        } 
+        // 2. Kalo udah muncul tapi gambarnya beda (Ganti langkah)
+        else if (this.tutImage.texture.key !== currentData.tutImageKey) {
+            this.tweens.add({
+                targets: this.tutImage,
+                alpha: 0,
+                scale: currentData.imageScale - 0.05, 
+                duration: 150,
+                onComplete: () => {
+                    this.tutImage.setTexture(currentData.tutImageKey); 
+                    this.tweens.add({
+                        targets: this.tutImage,
+                        alpha: 1,
+                        scale: currentData.imageScale, 
+                        duration: 150,
+                        ease: 'Back.out'
+                    });
+                }
+            });
+        }
+
+        // 3. Efek Animasi Boks Teks (Scale Pop-Up)
+        this.tutText.setText(currentData.pointerText);
+        this.bubbleContainer.setScale(0); 
+        this.tweens.add({ 
+            targets: this.bubbleContainer, 
+            scale: 1, 
+            duration: 400, 
+            ease: 'Back.out' 
+        });
+
+        // 4. Efek Pointer Pindah & Lompat-lompat
+        if (this.pointerBounceTween) this.pointerBounceTween.stop(); 
+
+        // Mainin suara woosh pas pointernya mulai jalan pindah ke lokasi baru
+        if (this.tutorialContainer.alpha === 1) { 
+            this.sound.play('sfx_woosh', { volume: 2.0 }); // 🔥 PLAY SFX WOOSH DI SINI JUGA
+        }
+
+        this.tweens.add({
+            targets: this.tutPointer,
+            x: currentData.pointerX,
+            y: currentData.pointerY,
+            duration: 400,
+            ease: 'Cubic.easeOut', 
+            onComplete: () => {
+                this.pointerBounceTween = this.tweens.add({
+                    targets: this.tutPointer,
+                    y: currentData.pointerY - 15, 
+                    duration: 350,
+                    yoyo: true,
+                    repeat: -1,
+                    ease: 'Sine.easeInOut'
+                });
+            }
+        });
+
+    } else {
+        // Hilangkan layar tutorial jika dialog sudah lewat
+        this.tweens.add({ targets: this.tutorialContainer, alpha: 0, duration: 300 });
+    }
+
+    // === LOGIKA DIALOG TEKS BAWAAN ===
     this.tweens.add({
       targets: this.character, scaleY: 0.75, scaleX: 0.85, duration: 120, yoyo: true, ease: 'Quad.easeOut',
       onYoyo: () => this.character.setTexture(currentData.sprite)
@@ -272,16 +372,13 @@ class menuScene extends Phaser.Scene {
   }
 
   playCinematicTransition() {
-    // Ilangin UI, termasuk container skip
     this.tweens.add({
-      targets: [this.character, this.dialogBox, this.dialogText, this.overlay, this.nameBox, this.nameText, this.nextIndicator, this.skipContainer, this.playBtn, this.titleText],
+      targets: [this.tutorialContainer, this.character, this.dialogBox, this.dialogText, this.overlay, this.nameBox, this.nameText, this.nextIndicator, this.skipContainer, this.playBtn, this.titleText],
       alpha: 0, duration: 800, ease: 'Power2'
     });
 
     this.sound.play('sfx_transition', { volume: 0.8 }); 
-
     this.tweens.add({ targets: this.bgm, volume: 0, duration: 3000 });
-
     this.cameras.main.zoomTo(1.1, 3000, 'Sine.easeInOut');
     this.cameras.main.fadeOut(3000, 255, 255, 255); 
 
@@ -293,21 +390,17 @@ class menuScene extends Phaser.Scene {
   }
 }
 
-// ... kode scene di atas biarkan saja ...
-
 const config = {
   type: Phaser.AUTO,
-  // Resolusi desain asli kamu
   width: 1344, 
   height: 720, 
-  backgroundColor: '#000000', // Warna background canvas
+  backgroundColor: '#000000',
   scale: {
-    // 🔥 MODE FIT: Game akan pas di layar browser apapun ukurannya
-    mode: Phaser.Scale.FIT, 
-    // 🔥 CENTER: Game otomatis di tengah-tengah
+    mode: Phaser.Scale.NONE, 
     autoCenter: Phaser.Scale.CENTER_BOTH 
   },
- scene: [menuScene, levelScene, gameplayScene1],
+  canvasStyle: 'width: 100vw; height: 100vh; object-fit: fill;',
+  scene: [menuScene, levelScene, gameplayScene1], 
 };
 
 new Phaser.Game(config);

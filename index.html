@@ -1,30 +1,38 @@
-index
-
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
   <meta charset="utf-8">
   <title>Game Phaser</title>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.js"></script>
   
   <style>
-    body {
+    /* Reset margin & padding bawaan browser */
+    * {
       margin: 0;
       padding: 0;
-      background-color: #000; /* Biar background luar item, lebih sinematik */
-      overflow: hidden; /* Hapus scrollbar */
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #000; 
+      overflow: hidden; /* Hilangkan scrollbar */
+      width: 100vw;
       height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+    }
+
+    /* 🔥 KUNCI STRETCH: Paksa canvas game melebar 100% dari layar browser */
+    canvas {
+      display: block;
+      width: 100vw !important;
+      height: 100vh !important;
+      object-fit: fill !important; 
     }
   </style>
 
 </head>
 <body>
-<body>
-  <script src="gameplay.js"></script>  <script src="level.js"></script>
+  <script src="gameplay.js"></script>
+  <script src="level.js"></script>
   <script src="menu.js"></script>
-</body>
 </body>
 </html>
