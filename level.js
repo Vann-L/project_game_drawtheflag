@@ -30,25 +30,44 @@ class levelScene extends Phaser.Scene {
     this.add.image(width / 2, height * 0.60, 'garis').setScale(1.0);
 
     // TEXT LEVEL
-    this.add.image(width / 2, height * 0.17, 'TEXTLEVEL').setScale(0.50);
+    this.add.image(width / 2, height * 0.14, 'TEXTLEVEL').setScale(0.41);
 
     // tombol back
-    const tombolback = this.add.image(width * 0.055, height * 0.080, 'tombolback')
-        .setScale(0.13)
-        .setInteractive({ useHandCursor: true });
+const tombolback = this.add.image(width * 0.055, height * 0.080, 'tombolback')
+    .setScale(0.13)
+    .setInteractive({ useHandCursor: true });
 
-    // Efek hover tombol back
-    tombolback.on('pointerover', () => {
-        this.tweens.add({ targets: tombolback, scale: 0.135, duration: 100, ease: 'Back.Out' });
-    });
-    tombolback.on('pointerout', () => {
-        this.tweens.add({ targets: tombolback, scale: 0.13, duration: 100, ease: 'Back.In' });
-    });
-    tombolback.on('pointerdown', () => {
-      localStorage.removeItem('levelData');
+// hover → sedikit gelap
+tombolback.on('pointerover', () => {
+    tombolback.setTint(0xeeeeee);
+});
 
-        this.scene.start('menu'); 
+// keluar → normal lagi
+tombolback.on('pointerout', () => {
+    tombolback.clearTint();
+});
+
+// klik
+tombolback.on('pointerdown', () => {
+
+    tombolback.setTint(0xeeeeee);
+
+    this.tweens.add({
+        targets: tombolback,
+        scale: 0.115,
+        duration: 80,
+        yoyo: true,
+        ease: 'Quad.easeOut'
     });
+
+    localStorage.removeItem('levelData');
+    this.scene.start('menu'); 
+});
+
+// lepas klik
+tombolback.on('pointerup', () => {
+    tombolback.setTint(0xdddddd);
+});
 
     // ======================= LOGIKA LEVEL =======================
 

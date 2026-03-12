@@ -216,8 +216,42 @@ class gameplayScene1 extends Phaser.Scene {
 
 
         // ================= UI ELEMENTS =================
-        const btnBack = this.add.image(60, 60, 'btnBack').setScale(0.12).setInteractive(); 
-        btnBack.on('pointerdown', () => this.scene.start('level'));
+        // tombol back
+const tombolback = this.add.image(width * 0.055, height * 0.080, 'tombolback')
+    .setScale(0.13)
+    .setInteractive({ useHandCursor: true });
+
+// hover → sedikit gelap
+tombolback.on('pointerover', () => {
+    tombolback.setTint(0xeeeeee);
+});
+
+// keluar → normal lagi
+tombolback.on('pointerout', () => {
+    tombolback.clearTint();
+});
+
+// klik
+tombolback.on('pointerdown', () => {
+
+    tombolback.setTint(0xeeeeee);
+
+    this.tweens.add({
+        targets: tombolback,
+        scale: 0.115,
+        duration: 80,
+        yoyo: true,
+        ease: 'Quad.easeOut'
+    });
+
+    
+    this.scene.start('level'); 
+});
+
+// lepas klik
+tombolback.on('pointerup', () => {
+    tombolback.setTint(0xdddddd);
+});
 
         const pMerah = this.add.image(width - 100, height/1.5 - 10, 'paletMerah').setInteractive().setScale(0.8);
         pMerah.on('pointerdown', () => {
@@ -232,6 +266,7 @@ class gameplayScene1 extends Phaser.Scene {
             this.updateBrushColor(0xFFFFFF);
             this.tweens.add({ targets: pPutih, scale: 0.9, duration: 100, yoyo: true });
         });
+
 
         // Judul & Timer
    // ================= JUDUL NEGARA =================
@@ -399,6 +434,41 @@ this.timerTween = this.tweens.add({
     }
 }
 
+addButtonEffect(btn) {
+
+    // HOVER → sedikit gelap
+    btn.on('pointerover', () => {
+        btn.setTint(0xdddddd); // agak gelap
+    });
+
+    // CURSOR KELUAR → kembali normal
+    btn.on('pointerout', () => {
+        btn.clearTint();
+    });
+
+    // KLIK → lebih gelap + animasi kecil
+    btn.on('pointerdown', () => {
+
+        btn.setTint(0xbbbbbb); // lebih gelap
+
+        this.tweens.add({
+            targets: btn,
+            scale: btn.scale * 0.9,
+            duration: 80,
+            yoyo: true,
+            ease: 'Quad.easeOut'
+        });
+
+    });
+
+    // LEPAS KLIK
+    btn.on('pointerup', () => {
+        btn.setTint(0xdddddd);
+    });
+
+}
+
+
 showWinScreen() {
 
     const { width, height } = this.scale;
@@ -421,7 +491,7 @@ showWinScreen() {
 
     // ===== UKURAN =====
     const bgScale = 0.25;
-    const flagScale = 1.37;
+    const flagScale = 0.59;
     const btnScale = 0.28;
 
 
@@ -437,27 +507,61 @@ showWinScreen() {
         .setScale(bgScale);
 
     // bendera
-    this.add.image(flagX, flagY, 'flagIndonesia')
-        .setDepth(201)
-        .setScale(flagScale);
+    const flag = this.add.image(flagX, flagY, 'flagIndonesia')
+    .setDepth(201)
+    .setScale(flagScale);
+
+   // ===== EFEK CAHAYA MENYINARI SISI BENDERA (GLOW EFFECT) =====
+
+    // 1. Buat "Bayangan Cahaya" di bawah bendera
+    // Kita buat 2 lapis supaya efek pendarannya halus
+    const createGlow = (color, scaleOffset, alpha) => {
+        return this.add.image(flag.x, flag.y, 'flagIndonesia')
+            .setDepth(200) // Di bawah bendera (201)
+            .setScale(flag.scale * scaleOffset)
+            .setTint(color)
+            .setAlpha(alpha);
+    };
+
+    const glow1 = createGlow(0xffffff, 1.05, 0.5); // Cahaya dalam (Kuning)
+    const glow2 = createGlow(0xffffff, 1.1, 0.3);  // Cahaya luar (Putih)
+
+    // 2. Animasi Cahaya Menyinar (Berdenyut/Pulse)
+    this.tweens.add({
+        targets: [glow1, glow2],
+        scaleX: '+=0.05',
+        scaleY: '+=0.05',
+        alpha: '-=0.2',
+        duration: 1000,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+    });
+
+    
 
     // tombol replay
     const replay = this.add.image(replayX, replayY, 'btnReplay')
-        .setInteractive()
+        .setInteractive({ useHandCursor: true })
         .setDepth(202)
         .setScale(btnScale);
 
     // tombol home
     const home = this.add.image(homeX, homeY, 'btnHome')
-        .setInteractive()
+        .setInteractive({ useHandCursor: true })
         .setDepth(202)
         .setScale(btnScale);
 
     // tombol next
     const next = this.add.image(nextX, nextY, 'btnNext')
-        .setInteractive()
+        .setInteractive({ useHandCursor: true })
         .setDepth(202)
         .setScale(btnScale);
+
+    // untuk efek
+    this.addButtonEffect(replay);
+    this.addButtonEffect(home);
+    this.addButtonEffect(next);
 
 
     replay.on('pointerdown', () => {
@@ -545,15 +649,19 @@ showLoseScreen() {
 
     // tombol replay
     const replay = this.add.image(replayX, replayY, 'btnReplayLose')
-        .setInteractive()
+        .setInteractive({ useHandCursor: true })
         .setDepth(502)
         .setScale(btnScale);
 
     // tombol home
     const home = this.add.image(homeX, homeY, 'btnHomeLose')
-        .setInteractive()
+        .setInteractive({ useHandCursor: true })
         .setDepth(502)
         .setScale(btnScale);
+    
+    // untuk efek
+    this.addButtonEffect(replay);
+    this.addButtonEffect(home);
 
     replay.on('pointerdown', () => {
         this.scene.restart();
