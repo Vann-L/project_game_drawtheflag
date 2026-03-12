@@ -28,6 +28,14 @@ class menuScene extends Phaser.Scene {
     
     // 🔥 PRELOAD SFX BARU UNTUK POINTER
     this.load.audio('sfx_woosh', 'asset/woosh.mp3'); 
+
+    // tomol skip
+    this.load.image('btn_skip', 'asset/btn_skip.png');
+
+    // POPUP CONFIRM
+    this.load.image('popup_confirm', 'asset/popup_confirm.png');
+    this.load.image('btn_yes', 'asset/btn_yes.png');
+    this.load.image('btn_no', 'asset/btn_no.png');
   }
 
   create() {
@@ -109,49 +117,41 @@ class menuScene extends Phaser.Scene {
 
     this.tutorialContainer.add([this.tutImage, this.bubbleContainer, this.tutPointer]);
 
-    // 🔥 TOMBOL SKIP (UI CUSTOM)
-    this.skipContainer = this.add.container(width - 120, 50).setDepth(21).setAlpha(0);
-    const skipBg = this.add.graphics();
-    skipBg.fillStyle(0x000000, 1);
-    skipBg.fillRoundedRect(-60, -25, 120, 50, 25); 
-    skipBg.lineStyle(3, 0xffffff, 1);
-    skipBg.strokeRoundedRect(-60, -25, 120, 50, 25);
-    const skipText = this.add.text(0, 0, 'Skip ⏭', { 
-        fontSize: '22px', fontFamily: 'Arial', color: '#ffffff', fontStyle: 'bold' 
-    }).setOrigin(0.5);
-    this.skipContainer.add([skipBg, skipText]);
-    this.skipZone = this.add.zone(width - 120, 50, 120, 50).setInteractive({ useHandCursor: true }).setDepth(22).setActive(false);
-    this.skipZone.on('pointerover', () => { skipBg.clear().fillStyle(0x555555, 1).fillRoundedRect(-60, -25, 120, 50, 25).lineStyle(3, 0xffffff, 1).strokeRoundedRect(-60, -25, 120, 50, 25); });
-    this.skipZone.on('pointerout', () => { skipBg.clear().fillStyle(0x000000, 1).fillRoundedRect(-60, -25, 120, 50, 25).lineStyle(3, 0xffffff, 1).strokeRoundedRect(-60, -25, 120, 50, 25); });
+// 🔥 TOMBOL SKIP (PAKAI GAMBAR)
+this.skipBtn = this.add.image(width - 130, 60, 'btn_skip')
+    .setScale(0.103)
+    .setDepth(21)
+    .setAlpha(0)
+    .setInteractive({ useHandCursor: true });
     this.introClickZone = this.add.zone(width / 2, height / 2, width, height).setInteractive({ useHandCursor: true }).setDepth(20).setActive(false).setVisible(false);
 
-    // 🔥 5. SETUP POP-UP KONFIRMASI
-    this.confirmBlocker = this.add.rectangle(width/2, height/2, width, height, 0x000000, 0.7).setDepth(30).setInteractive().setVisible(false);
-    this.confirmContainer = this.add.container(width/2, height/2).setDepth(31).setVisible(false).setScale(0.8);
-    const confirmBgShadow = this.add.graphics();
-    confirmBgShadow.fillStyle(0x000000, 0.5);
-    confirmBgShadow.fillRoundedRect(-245, -95, 500, 200, 20); 
-    const confirmBg = this.add.graphics();
-    confirmBg.fillStyle(0x1a1a1a, 1);
-    confirmBg.fillRoundedRect(-250, -100, 500, 200, 20);
-    confirmBg.lineStyle(4, 0xaaaaaa, 1);
-    confirmBg.strokeRoundedRect(-250, -100, 500, 200, 20);
-    const confirmTextData = this.add.text(0, -30, 'Yakin ingin melewati panduan?', { fontSize: '26px', fontFamily: 'Arial', color: '#ffffff' }).setOrigin(0.5);
-    const btnYesBg = this.add.graphics();
-    btnYesBg.fillStyle(0x4CAF50, 1).fillRoundedRect(-60, -25, 120, 50, 25);
-    const btnYesText = this.add.text(0, 0, 'YA', { fontSize: '22px', fontFamily: 'Arial', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
-    const btnYesContainer = this.add.container(-80, 45, [btnYesBg, btnYesText]);
-    const btnYesZone = this.add.zone(-80, 45, 120, 50).setInteractive({ useHandCursor: true });
-    btnYesZone.on('pointerover', () => { btnYesBg.clear().fillStyle(0x66BB6A, 1).fillRoundedRect(-60, -25, 120, 50, 25); });
-    btnYesZone.on('pointerout', () => { btnYesBg.clear().fillStyle(0x4CAF50, 1).fillRoundedRect(-60, -25, 120, 50, 25); });
-    const btnNoBg = this.add.graphics();
-    btnNoBg.fillStyle(0xF44336, 1).fillRoundedRect(-60, -25, 120, 50, 25);
-    const btnNoText = this.add.text(0, 0, 'TIDAK', { fontSize: '22px', fontFamily: 'Arial', color: '#ffffff', fontStyle: 'bold' }).setOrigin(0.5);
-    const btnNoContainer = this.add.container(80, 45, [btnNoBg, btnNoText]);
-    const btnNoZone = this.add.zone(80, 45, 120, 50).setInteractive({ useHandCursor: true });
-    btnNoZone.on('pointerover', () => { btnNoBg.clear().fillStyle(0xEF5350, 1).fillRoundedRect(-60, -25, 120, 50, 25); });
-    btnNoZone.on('pointerout', () => { btnNoBg.clear().fillStyle(0xF44336, 1).fillRoundedRect(-60, -25, 120, 50, 25); });
-    this.confirmContainer.add([confirmBgShadow, confirmBg, confirmTextData, btnYesContainer, btnNoContainer, btnYesZone, btnNoZone]);
+   // === POPUP KONFIRMASI (PAKAI GAMBAR) ===
+this.confirmBlocker = this.add.rectangle(width/2, height/2, width, height, 0x000000, 0.7)
+    .setDepth(30)
+    .setInteractive()
+    .setVisible(false);
+
+this.confirmContainer = this.add.container(width/2, height/2)
+    .setDepth(31)
+    .setVisible(false)
+    .setScale(0.8);
+
+// GAMBAR POPUP
+const popupImg = this.add.image(0, -27, 'popup_confirm').setScale(0.49);
+
+// TOMBOL YA
+const btnYes = this.add.image(-100, 38, 'btn_yes')
+    .setScale(0.092)
+    .setInteractive({ useHandCursor: true });
+
+// TOMBOL TIDAK
+const btnNo = this.add.image(60, 38, 'btn_no')
+    .setScale(0.092)
+    .setInteractive({ useHandCursor: true });
+
+// MASUKKAN KE CONTAINER
+this.confirmContainer.add([popupImg, btnYes, btnNo]);
+
 
     // ==========================================================
     // === DATA CERITA (DENGAN PENGATURAN UKURAN & POINTER) ===
@@ -212,20 +212,65 @@ class menuScene extends Phaser.Scene {
       this.startIntro();
     });
 
-    this.skipZone.on('pointerdown', () => {
-      this.introClickZone.disableInteractive();
-      this.toggleConfirmDialog(true);
-    });
+    this.skipBtn.on('pointerdown', () => {
+ this.tweens.add({
+        targets: this.skipBtn,
+        scale: 0.106,     // tekan
+        duration: 20,
+        ease: 'Quad.easeIn',
+        onComplete: () => {
 
-    btnYesZone.on('pointerdown', () => {
-      this.toggleConfirmDialog(false); 
-      this.playCinematicTransition();  
-    });
+            this.tweens.add({
+                targets: this.skipBtn,
+                scale: 0.103,   // memantul sedikit
+                duration: 120,
+                ease: 'Back.easeOut'
+            });
 
-    btnNoZone.on('pointerdown', () => {
-      this.toggleConfirmDialog(false); 
-      this.introClickZone.setInteractive({ useHandCursor: true }); 
+        }
     });
+    this.introClickZone.disableInteractive();
+    this.toggleConfirmDialog(true);
+});
+
+ 
+btnYes.on('pointerdown', () => {
+    this.toggleConfirmDialog(false);
+    this.playCinematicTransition();
+});
+
+btnNo.on('pointerdown', () => {
+    this.toggleConfirmDialog(false);
+    this.introClickZone.setInteractive({ useHandCursor: true });
+});
+    
+     //===== efek efek button =====
+     //efek skip
+    this.skipBtn.on('pointerover', () => {
+    this.skipBtn.setTint(0xeeeeee); // sedikit gelap
+});
+
+    this.skipBtn.on('pointerout', () => {
+    this.skipBtn.clearTint(); // balik normal
+});
+   //efek yes
+    btnYes.on('pointerover', () => {
+    btnYes.setTint(0xeeeeee);
+});
+
+    btnYes.on('pointerout', () => {
+    btnYes.clearTint();
+});
+    //efek no
+    btnNo.on('pointerover', () => {
+    btnNo.setTint(0xeeeeee);
+});
+
+    btnNo.on('pointerout', () => {
+    btnNo.clearTint();
+});
+
+    
 
     this.introClickZone.on('pointerdown', () => {
       if (this.isTyping) {
@@ -243,6 +288,8 @@ class menuScene extends Phaser.Scene {
         }
       }
     });
+
+   
   }
 
   toggleConfirmDialog(show) {
@@ -257,10 +304,10 @@ class menuScene extends Phaser.Scene {
 
   startIntro() {
     this.introClickZone.setActive(true).setVisible(true);
-    this.skipZone.setActive(true); 
+   this.skipBtn.setActive(true);
     this.tweens.add({ targets: this.bgm, volume: 0.2, duration: 1000, ease: 'Sine.easeInOut' });
     this.tweens.add({
-      targets: [this.overlay, this.character, this.dialogBox, this.dialogText, this.nameBox, this.nameText, this.skipContainer],
+      targets: [this.overlay, this.character, this.dialogBox, this.dialogText, this.nameBox, this.nameText, this.skipBtn],
       alpha: 1, duration: 500,
       onComplete: () => {
         this.showDialog();
@@ -373,7 +420,7 @@ class menuScene extends Phaser.Scene {
 
   playCinematicTransition() {
     this.tweens.add({
-      targets: [this.tutorialContainer, this.character, this.dialogBox, this.dialogText, this.overlay, this.nameBox, this.nameText, this.nextIndicator, this.skipContainer, this.playBtn, this.titleText],
+      targets: [this.tutorialContainer, this.character, this.dialogBox, this.dialogText, this.overlay, this.nameBox, this.nameText, this.nextIndicator, this.skipBtn, this.playBtn, this.titleText],
       alpha: 0, duration: 800, ease: 'Power2'
     });
 
@@ -401,6 +448,7 @@ const config = {
   },
   canvasStyle: 'width: 100vw; height: 100vh; object-fit: fill;',
   scene: [menuScene, levelScene, gameplayScene1], 
+  
 };
 
 new Phaser.Game(config);
