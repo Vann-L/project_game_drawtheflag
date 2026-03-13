@@ -42,9 +42,17 @@ class menuScene extends Phaser.Scene {
     const width = 1344;
     const height = 720;
 
-    // MAININ BGM PAS MASUK MENU
-    this.bgm = this.sound.add('bgm_menu', { volume: 0.8, loop: true });
-    this.bgm.play();
+    // MAININ BGM PAS MASUK MENU (Cek dulu biar gak double)
+    let existingBgm = this.sound.get('bgm_menu');
+    if (!existingBgm) {
+        this.bgm = this.sound.add('bgm_menu', { volume: 0.8, loop: true });
+        this.bgm.play();
+    } else {
+        this.bgm = existingBgm;
+        if (!this.bgm.isPlaying) {
+            this.bgm.play();
+        }
+    }
 
     // === 1. BACKGROUND === 
     this.bg = this.add.image(width / 2, height / 2, 'bg').setDisplaySize(width, height);
@@ -117,41 +125,40 @@ class menuScene extends Phaser.Scene {
 
     this.tutorialContainer.add([this.tutImage, this.bubbleContainer, this.tutPointer]);
 
-// 🔥 TOMBOL SKIP (PAKAI GAMBAR)
-this.skipBtn = this.add.image(width - 130, 60, 'btn_skip')
-    .setScale(0.103)
-    .setDepth(21)
-    .setAlpha(0)
-    .setInteractive({ useHandCursor: true });
+    // 🔥 TOMBOL SKIP (PAKAI GAMBAR)
+    this.skipBtn = this.add.image(width - 130, 60, 'btn_skip')
+        .setScale(0.103)
+        .setDepth(21)
+        .setAlpha(0)
+        .setInteractive({ useHandCursor: true });
     this.introClickZone = this.add.zone(width / 2, height / 2, width, height).setInteractive({ useHandCursor: true }).setDepth(20).setActive(false).setVisible(false);
 
-   // === POPUP KONFIRMASI (PAKAI GAMBAR) ===
-this.confirmBlocker = this.add.rectangle(width/2, height/2, width, height, 0x000000, 0.7)
-    .setDepth(30)
-    .setInteractive()
-    .setVisible(false);
+    // === POPUP KONFIRMASI (PAKAI GAMBAR) ===
+    this.confirmBlocker = this.add.rectangle(width/2, height/2, width, height, 0x000000, 0.7)
+        .setDepth(30)
+        .setInteractive()
+        .setVisible(false);
 
-this.confirmContainer = this.add.container(width/2, height/2)
-    .setDepth(31)
-    .setVisible(false)
-    .setScale(0.8);
+    this.confirmContainer = this.add.container(width/2, height/2)
+        .setDepth(31)
+        .setVisible(false)
+        .setScale(0.8);
 
-// GAMBAR POPUP
-const popupImg = this.add.image(0, -27, 'popup_confirm').setScale(0.49);
+    // GAMBAR POPUP
+    const popupImg = this.add.image(0, -27, 'popup_confirm').setScale(0.49);
 
-// TOMBOL YA
-const btnYes = this.add.image(-100, 38, 'btn_yes')
-    .setScale(0.092)
-    .setInteractive({ useHandCursor: true });
+    // TOMBOL YA
+    const btnYes = this.add.image(-100, 38, 'btn_yes')
+        .setScale(0.092)
+        .setInteractive({ useHandCursor: true });
 
-// TOMBOL TIDAK
-const btnNo = this.add.image(60, 38, 'btn_no')
-    .setScale(0.092)
-    .setInteractive({ useHandCursor: true });
+    // TOMBOL TIDAK
+    const btnNo = this.add.image(60, 38, 'btn_no')
+        .setScale(0.092)
+        .setInteractive({ useHandCursor: true });
 
-// MASUKKAN KE CONTAINER
-this.confirmContainer.add([popupImg, btnYes, btnNo]);
-
+    // MASUKKAN KE CONTAINER
+    this.confirmContainer.add([popupImg, btnYes, btnNo]);
 
     // ==========================================================
     // === DATA CERITA (DENGAN PENGATURAN UKURAN & POINTER) ===
@@ -192,7 +199,7 @@ this.confirmContainer.add([popupImg, btnYes, btnNo]);
         text: "Ketiga, perhatikan batas waktu di atas! Jika waktu habis sebelum bendera selesai, kamu kalah.", 
         sprite: 'char_thinking',
         showTutorial: true, 
-        tutImageKey: 'tutorial2_img', // Sesuai kode lu sebelumnya pake tutorial2_img
+        tutImageKey: 'tutorial2_img', 
         imageScale: 0.8,       
         pointerText: "3. Perhatikan Waktu!",
         pointerX: 175,           
@@ -213,64 +220,59 @@ this.confirmContainer.add([popupImg, btnYes, btnNo]);
     });
 
     this.skipBtn.on('pointerdown', () => {
- this.tweens.add({
-        targets: this.skipBtn,
-        scale: 0.106,     // tekan
-        duration: 20,
-        ease: 'Quad.easeIn',
-        onComplete: () => {
-
-            this.tweens.add({
-                targets: this.skipBtn,
-                scale: 0.103,   // memantul sedikit
-                duration: 120,
-                ease: 'Back.easeOut'
-            });
-
-        }
+        this.tweens.add({
+            targets: this.skipBtn,
+            scale: 0.106,     // tekan
+            duration: 20,
+            ease: 'Quad.easeIn',
+            onComplete: () => {
+                this.tweens.add({
+                    targets: this.skipBtn,
+                    scale: 0.103,   // memantul sedikit
+                    duration: 120,
+                    ease: 'Back.easeOut'
+                });
+            }
+        });
+        this.introClickZone.disableInteractive();
+        this.toggleConfirmDialog(true);
     });
-    this.introClickZone.disableInteractive();
-    this.toggleConfirmDialog(true);
-});
 
- 
-btnYes.on('pointerdown', () => {
-    this.toggleConfirmDialog(false);
-    this.playCinematicTransition();
-});
+    btnYes.on('pointerdown', () => {
+        this.toggleConfirmDialog(false);
+        this.playCinematicTransition();
+    });
 
-btnNo.on('pointerdown', () => {
-    this.toggleConfirmDialog(false);
-    this.introClickZone.setInteractive({ useHandCursor: true });
-});
+    btnNo.on('pointerdown', () => {
+        this.toggleConfirmDialog(false);
+        this.introClickZone.setInteractive({ useHandCursor: true });
+    });
     
      //===== efek efek button =====
      //efek skip
     this.skipBtn.on('pointerover', () => {
-    this.skipBtn.setTint(0xeeeeee); // sedikit gelap
-});
+        this.skipBtn.setTint(0xeeeeee); // sedikit gelap
+    });
 
     this.skipBtn.on('pointerout', () => {
-    this.skipBtn.clearTint(); // balik normal
-});
-   //efek yes
+        this.skipBtn.clearTint(); // balik normal
+    });
+    //efek yes
     btnYes.on('pointerover', () => {
-    btnYes.setTint(0xeeeeee);
-});
+        btnYes.setTint(0xeeeeee);
+    });
 
     btnYes.on('pointerout', () => {
-    btnYes.clearTint();
-});
+        btnYes.clearTint();
+    });
     //efek no
     btnNo.on('pointerover', () => {
-    btnNo.setTint(0xeeeeee);
-});
+        btnNo.setTint(0xeeeeee);
+    });
 
     btnNo.on('pointerout', () => {
-    btnNo.clearTint();
-});
-
-    
+        btnNo.clearTint();
+    });
 
     this.introClickZone.on('pointerdown', () => {
       if (this.isTyping) {
@@ -288,8 +290,6 @@ btnNo.on('pointerdown', () => {
         }
       }
     });
-
-   
   }
 
   toggleConfirmDialog(show) {
@@ -304,7 +304,7 @@ btnNo.on('pointerdown', () => {
 
   startIntro() {
     this.introClickZone.setActive(true).setVisible(true);
-   this.skipBtn.setActive(true);
+    this.skipBtn.setActive(true);
     this.tweens.add({ targets: this.bgm, volume: 0.2, duration: 1000, ease: 'Sine.easeInOut' });
     this.tweens.add({
       targets: [this.overlay, this.character, this.dialogBox, this.dialogText, this.nameBox, this.nameText, this.skipBtn],
@@ -367,7 +367,8 @@ btnNo.on('pointerdown', () => {
 
         // Mainin suara woosh pas pointernya mulai jalan pindah ke lokasi baru
         if (this.tutorialContainer.alpha === 1) { 
-            this.sound.play('sfx_woosh', { volume: 2.0 }); // 🔥 PLAY SFX WOOSH DI SINI JUGA
+            // 🔥 Mainkan woosh dengan volume sedang, BGM biarin anteng!
+            this.sound.play('sfx_woosh', { volume: 0.8 });
         }
 
         this.tweens.add({
@@ -424,14 +425,17 @@ btnNo.on('pointerdown', () => {
       alpha: 0, duration: 800, ease: 'Power2'
     });
 
+    // Play transisi yang 6 detik itu
     this.sound.play('sfx_transition', { volume: 0.8 }); 
-    this.tweens.add({ targets: this.bgm, volume: 0, duration: 3000 });
+  
+    // 🔥 DUCKING BGM: Hilangkan BGM perlahan selama 1 detik biar transisi kedengaran jelas
+    this.tweens.add({ targets: this.bgm, volume: 0, duration: 1000 }); 
+  
     this.cameras.main.zoomTo(1.1, 3000, 'Sine.easeInOut');
     this.cameras.main.fadeOut(3000, 255, 255, 255); 
-
+    
     this.cameras.main.once('camerafadeoutcomplete', () => {
       this.cameras.main.setZoom(1); 
-      this.bgm.stop(); 
       this.scene.start('level');
     });
   }
