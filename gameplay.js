@@ -11,7 +11,8 @@ class gameplayScene1 extends Phaser.Scene {
         this.load.image('paletMerah', 'asset/paletmerah.png'); 
         this.load.image('paletPutih', 'asset/paletputih.png');
         this.load.image('bgKuas', 'asset/penampungkuas.png');
-        this.load.image('iconKuas', 'asset/kuas.png');
+        this.load.image('gagangKuas', 'asset/gagang_kuas.png'); 
+        this.load.image('buluKuas', 'asset/bulu_kuas.png');
         this.load.image('iconjam', 'asset/ICON JAM.png');
 
         this.load.image('winBG', 'asset/ANIMASI MENANG.png');
@@ -32,8 +33,6 @@ class gameplayScene1 extends Phaser.Scene {
         // 1. PASANG BACKGROUND
         this.add.image(width / 2, height / 2, 'bgBoard').setDisplaySize(width, height);
 
-        
-
         // ==================================================================
         // 🔥 PENGATURAN POSISI & UKURAN 🔥
         // ==================================================================
@@ -45,6 +44,7 @@ class gameplayScene1 extends Phaser.Scene {
 
         // --- VARIABEL ---
         this.selectedColor = null; 
+        this.isAnimating = false; 
 
         // --- FUNGSI ARSIRAN (Background) ---
         const createStripes = (x, y, w, h) => {
@@ -80,55 +80,54 @@ class gameplayScene1 extends Phaser.Scene {
         const zoneBottom = this.add.rectangle(boardX, bottomY, flagW, halfHeight, 0xFFFFFF)
             .setInteractive({ useHandCursor: true }).setAlpha(0.01);
 
-
         // --- 🔥 GARIS HITAM & BINGKAI 🔥 ---
-        // Depth 20 supaya garis selalu paling atas
         this.add.rectangle(boardX, boardY, flagW, 3, 0x000000).setDepth(20);
         this.add.rectangle(boardX, boardY, flagW, flagH)
             .setStrokeStyle(3, 0x000000).setDepth(20);
 
-        
-        // --- 🖌️ IKON KUAS (Disiapkan di awal, default hidden) ---
-        // Kita simpan di variabel 'this.brush' biar bisa digerakkan global
-        this.add.image(width - 120, height - 100, 'bgKuas').setScale(0.7);
-        this.brushIcon = this.add.image(width - 120, height - 100, 'iconKuas').setScale(0.7).setDepth(30);
+        // --- 🖌️ IKON KUAS ---
+        this.add.image(width - 120, height - 95, 'bgKuas').setScale(0.7);
+        const gagang = this.add.image(0, 0, 'gagangKuas');
+        // 👇 Ganti angka -15 di bawah ini kalau bulunya menceng sama gagangnya 👇
+        this.bulu = this.add.image(0, 0, 'buluKuas'); 
 
+        this.brushContainer = this.add.container(width - 120, height - 100, [gagang, this.bulu])
+            .setScale(0.2)
+            .setDepth(30);
 
         // ==================================================================
         // 🔥 LOGIC MEWARNAI: "LIQUID FILL" (PASTI PENUH & SMOOTH) 🔥
         // ==================================================================
         const paintZone = (zone, stripesObj) => {
-            // Cek 1: Warna dipilih?
             if (this.selectedColor === null) {
                 this.tweens.add({ targets: zone, x: zone.x + 5, duration: 50, yoyo: true, repeat: 3 });
                 return;
             }
 
-            // Cek 2: Jangan spam klik
             const currentColor = zone.getData('colorCode');
             if (zone.getData('isPainting') || currentColor === this.selectedColor) return;
 
             zone.setData('isPainting', true);
+            this.isAnimating = true; // 🔥 NYALAIN GEMBOK
 
-            // --- PERSIAPAN ---
+            // 🔥 FIX BUG: Kunci warna di sini
+            const paintColor = this.selectedColor; 
+
             const paintGraphics = this.add.graphics().setDepth(5);
             
-            // Masking (Biar cat gak bleber keluar kotak)
-            const maskShape = this.make.graphics();
-            maskShape.fillStyle(0xffffff);
-            maskShape.fillRect(zone.x - zone.width/2, zone.y - zone.height/2, zone.width, zone.height);
-            const mask = maskShape.createGeometryMask();
-            paintGraphics.setMask(mask);
+            const maskShapeLocal = this.make.graphics();
+            maskShapeLocal.fillStyle(0xffffff);
+            maskShapeLocal.fillRect(zone.x - zone.width/2, zone.y - zone.height/2, zone.width, zone.height);
+            const maskLocal = maskShapeLocal.createGeometryMask();
+            paintGraphics.setMask(maskLocal);
 
-            // --- KOORDINAT ---
-            const startX = zone.x - zone.width / 2; // Kiri
-            const startY = zone.y;                // Tengah Vertical
+            const startX = zone.x - zone.width / 2; 
+            const startY = zone.y;                
             const zoneW = zone.width;
             const zoneH = zone.height;
 
-            // Kita gerakkan Brush Icon ke posisi start dulu
             this.tweens.add({
-                targets: this.brushIcon,
+                targets: this.brushContainer,
                 x: startX,
                 y: startY,
                 angle: -20,
@@ -139,47 +138,37 @@ class gameplayScene1 extends Phaser.Scene {
                 }
             });
 
-            // --- FUNGSI ANIMASI UTAMA ---
             const startPainting = () => {
                 const animData = { progress: 0 }; 
 
                 this.tweens.add({
                     targets: animData,
-                    progress: 1, // Target sampai 100% lebar
-                    duration: 1000, // Durasi ngecat
-                    ease: 'Linear', // Linear biar ngisinya stabil
+                    progress: 1, 
+                    duration: 1000, 
+                    ease: 'Linear', 
                     
                     onUpdate: () => {
                         paintGraphics.clear();
-                        paintGraphics.fillStyle(this.selectedColor, 1);
-
-                        // 1. HITUNG POSISI 'KEPALA' KUAS
-                        const currentX = startX + (animData.progress * zoneW);
                         
-                        // Sedikit goyangan vertikal biar 'hidup'
+                        paintGraphics.fillStyle(paintColor, 1);
+
+                        const currentX = startX + (animData.progress * zoneW);
                         const wobble = Math.sin(animData.progress * 15) * 10;
                         const currentY = startY + wobble;
 
-                        // 2. GAMBAR EKOR (AREA YANG SUDAH DICAT)
                         paintGraphics.fillRect(startX, startY - zoneH/2 - 10, (currentX - startX), zoneH + 20);
 
-                        // 3. GAMBAR KEPALA KUAS (BULATAN)
                         const brushHeadSize = zoneH / 2 + 10; 
                         paintGraphics.fillCircle(currentX, currentY, brushHeadSize);
 
-                        // 4. UPDATE VISUAL ICON KUAS
-                        this.brushIcon.x = currentX + 30;
-                        this.brushIcon.y = currentY - 40;
-                        
-                        // Rotasi goyang dikit pas ngecat
-                        this.brushIcon.setAngle(-20 + Math.cos(animData.progress * 20) * 10);
+                        this.brushContainer.x = currentX + 30;
+                        this.brushContainer.y = currentY - 40;
+                        this.brushContainer.setAngle(-20 + Math.cos(animData.progress * 20) * 10);
                     },
 
                     onComplete: () => {
-                        // --- FINISHING ---
-                        // Balikin Kuas
                         this.tweens.add({
-                            targets: this.brushIcon,
+                            targets: this.brushContainer,
                             x: width - 120,
                             y: height - 100,
                             angle: 0,
@@ -187,22 +176,18 @@ class gameplayScene1 extends Phaser.Scene {
                             ease: 'Back.out'
                         });
 
-                        // Hapus Stripes
                         if (stripesObj.active) stripesObj.destroy();
                         
-                        // Jadikan Permanen
-                        zone.setFillStyle(this.selectedColor);
+                        zone.setFillStyle(paintColor);
                         zone.setAlpha(1);
                         
-                        // Bersihkan Graphics
                         paintGraphics.destroy();
-                        maskShape.destroy();
+                        maskShapeLocal.destroy();
 
-                        // Simpan Data
-                        zone.setData('colorCode', this.selectedColor);
+                        zone.setData('colorCode', paintColor);
                         zone.setData('isPainting', false);
+                        this.isAnimating = false; // 🔥 MATIIN GEMBOK
                         
-                        // Efek 'Puas'
                         this.tweens.add({ targets: zone, scale: 1.02, duration: 150, yoyo: true });
 
                         this.checkWinCondition(zoneTop, zoneBottom);
@@ -216,45 +201,22 @@ class gameplayScene1 extends Phaser.Scene {
 
 
         // ================= UI ELEMENTS =================
-        // tombol back
-const tombolback = this.add.image(width * 0.055, height * 0.080, 'tombolback')
-    .setScale(0.13)
-    .setInteractive({ useHandCursor: true });
+        const tombolback = this.add.image(width * 0.055, height * 0.080, 'tombolback')
+            .setScale(0.13)
+            .setInteractive({ useHandCursor: true });
 
-// hover → sedikit gelap
-tombolback.on('pointerover', () => {
-    tombolback.setTint(0xeeeeee);
-});
-
-// keluar → normal lagi
-tombolback.on('pointerout', () => {
-    tombolback.clearTint();
-});
-
-// klik
-tombolback.on('pointerdown', () => {
-
-    tombolback.setTint(0xeeeeee);
-
-    this.tweens.add({
-        targets: tombolback,
-        scale: 0.115,
-        duration: 80,
-        yoyo: true,
-        ease: 'Quad.easeOut'
-    });
-
-    
-    this.scene.start('level'); 
-});
-
-// lepas klik
-tombolback.on('pointerup', () => {
-    tombolback.setTint(0xdddddd);
-});
+        tombolback.on('pointerover', () => { tombolback.setTint(0xeeeeee); });
+        tombolback.on('pointerout', () => { tombolback.clearTint(); });
+        tombolback.on('pointerdown', () => {
+            tombolback.setTint(0xeeeeee);
+            this.tweens.add({ targets: tombolback, scale: 0.115, duration: 80, yoyo: true, ease: 'Quad.easeOut' });
+            this.scene.start('level'); 
+        });
+        tombolback.on('pointerup', () => { tombolback.setTint(0xdddddd); });
 
         const pMerah = this.add.image(width - 100, height/1.5 - 10, 'paletMerah').setInteractive().setScale(0.8);
         pMerah.on('pointerdown', () => {
+            if (this.isAnimating) return; // 🔥 CEGAH KLIK PALET
             this.selectedColor = 0xD9252B; 
             this.updateBrushColor(0xD9252B);
             this.tweens.add({ targets: pMerah, scale: 0.9, duration: 100, yoyo: true });
@@ -262,414 +224,199 @@ tombolback.on('pointerup', () => {
 
         const pPutih = this.add.image(width - 100, height/1.8 + 10, 'paletPutih').setInteractive().setScale(0.8);
         pPutih.on('pointerdown', () => {
+            if (this.isAnimating) return; // 🔥 CEGAH KLIK PALET
             this.selectedColor = 0xFFFFFF; 
             this.updateBrushColor(0xFFFFFF);
             this.tweens.add({ targets: pPutih, scale: 0.9, duration: 100, yoyo: true });
         });
 
 
-        // Judul & Timer
-   // ================= JUDUL NEGARA =================
+        // ================= JUDUL NEGARA =================
+        const titleScale = 0.46; 
+        const titleWidth = 650 * titleScale;
+        const titleHeight = 60 * titleScale;
+        const titleX = width - 202;
+        const titleY = 102;
 
-const titleScale = 0.46; // ubah ini saja untuk besar / kecil
-
-const titleWidth = 650 * titleScale;
-const titleHeight = 60 * titleScale;
-
-const titleX = width - 202;
-const titleY = 102;
-
-const titleOuter = this.add.graphics();
-
-// FRAME LUAR
-titleOuter.fillStyle(0xffffff, 1);
-titleOuter.fillRoundedRect(
-    titleX - titleWidth/2 - (6 * titleScale),
-    titleY - titleHeight/2 - (6 * titleScale),
-    titleWidth + (12 * titleScale),
-    titleHeight + (12 * titleScale),
-    30 * titleScale
-);
-
-// BORDER HITAM
-titleOuter.lineStyle(4 * titleScale, 0x000000);
-titleOuter.strokeRoundedRect(
-    titleX - titleWidth/2,
-    titleY - titleHeight/2,
-    titleWidth,
-    titleHeight,
-    25 * titleScale
-);
-
-// TEXT
-this.add.text(titleX, titleY, 'INDONESIA', {
-    fontSize: (32 * titleScale) + 'px',
-    fontFamily: 'Arial',
-    color: '#000000',
-    fontStyle: 'bold'
-}).setOrigin(0.5);
-// ================= TIMER =================
-
-const timerScale = 0.85; // ubah ini kalau mau lebih kecil / besar
-
-const barWidth = 300 * timerScale;
-const barHeight = 22 * timerScale;
-
-const barX = width - 347;
-const barY = 60;
-
-// ICON JAM
-this.add.image(barX + barWidth + (40 * timerScale), barY, 'iconjam')
-.setScale(0.1 * timerScale);
-
-// FRAME LUAR
-const frame = this.add.graphics();
-frame.fillStyle(0xffffff, 1);
-frame.lineStyle(2, 0xffffff);
-
-frame.fillRoundedRect(
-    barX - (6 * timerScale),
-    barY - (16 * timerScale),
-    barWidth + (12 * timerScale),
-    32 * timerScale,
-    16 * timerScale
-);
-
-frame.strokeRoundedRect(
-    barX - (6 * timerScale),
-    barY - (16 * timerScale),
-    barWidth + (12 * timerScale),
-    32 * timerScale,
-    16 * timerScale
-);
-
-// BACKGROUND TIMER
-const timerBG = this.add.graphics();
-timerBG.fillStyle(0xffffff, 1);
-timerBG.lineStyle(2, 0x000000);
-
-timerBG.fillRoundedRect(
-    barX,
-    barY - barHeight/2,
-    barWidth,
-    barHeight,
-    12 * timerScale
-);
-
-timerBG.strokeRoundedRect(
-    barX,
-    barY - barHeight/2,
-    barWidth,
-    barHeight,
-    12 * timerScale
-);
-
-// PROGRESS MERAH
-const timerFill = this.add.graphics();
-
-// MASK
-const maskShape = this.make.graphics();
-maskShape.fillStyle(0xffffff);
-maskShape.fillRoundedRect(
-    barX,
-    barY - barHeight/2,
-    barWidth,
-    barHeight,
-    12 * timerScale
-);
-
-const mask = maskShape.createGeometryMask();
-timerFill.setMask(mask);
-
-const timerData = { value: 1 };
-
-this.timerTween = this.tweens.add({
-    targets: timerData,
-    value: 0,
-    duration: 10000,
-    ease: 'Linear',
-
-    onUpdate: () => {
-
-        timerFill.clear();
-        timerFill.fillStyle(0xF21B1B, 1);
-
-        timerFill.fillRoundedRect(
-            barX,
-            barY - barHeight/2,
-            barWidth * timerData.value,
-            barHeight,
-            12 * timerScale
+        const titleOuter = this.add.graphics();
+        titleOuter.fillStyle(0xffffff, 1);
+        titleOuter.fillRoundedRect(
+            titleX - titleWidth/2 - (6 * titleScale),
+            titleY - titleHeight/2 - (6 * titleScale),
+            titleWidth + (12 * titleScale),
+            titleHeight + (12 * titleScale),
+            30 * titleScale
         );
-    },
+        titleOuter.lineStyle(4 * titleScale, 0x000000);
+        titleOuter.strokeRoundedRect(titleX - titleWidth/2, titleY - titleHeight/2, titleWidth, titleHeight, 25 * titleScale);
 
-    onComplete: () => {
-       this.showLoseScreen();
-    }
-});
+        this.add.text(titleX, titleY, 'INDONESIA', {
+            fontSize: (32 * titleScale) + 'px', fontFamily: 'Arial', color: '#000000', fontStyle: 'bold'
+        }).setOrigin(0.5);
+
+        // ================= TIMER =================
+        const timerScale = 0.85; 
+        const barWidth = 300 * timerScale;
+        const barHeight = 22 * timerScale;
+        const barX = width - 347;
+        const barY = 60;
+
+        this.add.image(barX + barWidth + (40 * timerScale), barY, 'iconjam').setScale(0.1 * timerScale);
+
+        const frame = this.add.graphics();
+        frame.fillStyle(0xffffff, 1);
+        frame.lineStyle(2, 0xffffff);
+        frame.fillRoundedRect(barX - (6 * timerScale), barY - (16 * timerScale), barWidth + (12 * timerScale), 32 * timerScale, 16 * timerScale);
+        frame.strokeRoundedRect(barX - (6 * timerScale), barY - (16 * timerScale), barWidth + (12 * timerScale), 32 * timerScale, 16 * timerScale);
+
+        const timerBG = this.add.graphics();
+        timerBG.fillStyle(0xffffff, 1);
+        timerBG.lineStyle(2, 0x000000);
+        timerBG.fillRoundedRect(barX, barY - barHeight/2, barWidth, barHeight, 12 * timerScale);
+        timerBG.strokeRoundedRect(barX, barY - barHeight/2, barWidth, barHeight, 12 * timerScale);
+
+        const timerFill = this.add.graphics();
+
+        const maskShapeTimer = this.make.graphics();
+        maskShapeTimer.fillStyle(0xffffff);
+        maskShapeTimer.fillRoundedRect(barX, barY - barHeight/2, barWidth, barHeight, 12 * timerScale);
+        const maskTimer = maskShapeTimer.createGeometryMask();
+        timerFill.setMask(maskTimer);
+
+        const timerData = { value: 1 };
+
+        this.timerTween = this.tweens.add({
+            targets: timerData,
+            value: 0,
+            duration: 10000,
+            ease: 'Linear',
+            onUpdate: () => {
+                timerFill.clear();
+                timerFill.fillStyle(0xF21B1B, 1);
+                timerFill.fillRoundedRect(barX, barY - barHeight/2, barWidth * timerData.value, barHeight, 12 * timerScale);
+            },
+            onComplete: () => {
+               this.showLoseScreen();
+            }
+        });
 
         this.add.image(60, height - 60, 'btnHint').setInteractive().setScale(0.8)
             .on('pointerdown', () => alert("Atas Merah, Bawah Putih!"));
-    } 
+            
+    } // <--- AKHIR DARI FUNGSI CREATE. Nggak ada tulisan merah lagi di bawah sini.
 
+    // ==================================================================
+    // 🔥 FUNGSI-FUNGSI LUAR (DITARUH DI SINI BARU BENER) 🔥
+    // ==================================================================
     updateBrushColor(color) {
-        this.brushIcon.setTint(color);
+        this.bulu.setTint(color);
     }
 
-   checkWinCondition(zoneTop, zoneBottom) {
-    const topColor = zoneTop.getData('colorCode');
-    const bottomColor = zoneBottom.getData('colorCode');
+    checkWinCondition(zoneTop, zoneBottom) {
+        const topColor = zoneTop.getData('colorCode');
+        const bottomColor = zoneBottom.getData('colorCode');
 
-    if (topColor === 0xD9252B && bottomColor === 0xFFFFFF) {
-
-         // 🔥 STOP TIMER
-        if (this.timerTween) {
-            this.timerTween.stop();
+        if (topColor === 0xD9252B && bottomColor === 0xFFFFFF) {
+            if (this.timerTween) {
+                this.timerTween.stop();
+            }
+            this.time.delayedCall(500, () => { 
+                this.showWinScreen();
+            });
         }
-
-        this.time.delayedCall(500, () => { 
-            this.showWinScreen();
-        });
-
     }
-}
 
-addButtonEffect(btn) {
+    addButtonEffect(btn) {
+        btn.on('pointerover', () => { btn.setTint(0xdddddd); });
+        btn.on('pointerout', () => { btn.clearTint(); });
+        btn.on('pointerdown', () => {
+            btn.setTint(0xbbbbbb);
+            this.tweens.add({ targets: btn, scale: btn.scale * 0.9, duration: 80, yoyo: true, ease: 'Quad.easeOut' });
+        });
+        btn.on('pointerup', () => { btn.setTint(0xdddddd); });
+    }
 
-    // HOVER → sedikit gelap
-    btn.on('pointerover', () => {
-        btn.setTint(0xdddddd); // agak gelap
-    });
+    showWinScreen() {
+        const { width, height } = this.scale;
+        const bgX = 670, bgY = 130;
+        const flagX = 660, flagY = 373;
+        const replayX = 500, replayY = 610;
+        const homeX = 660, homeY = 610;
+        const nextX = 820, nextY = 610;
+        const bgScale = 0.25, flagScale = 0.59, btnScale = 0.28;
 
-    // CURSOR KELUAR → kembali normal
-    btn.on('pointerout', () => {
-        btn.clearTint();
-    });
+        this.add.rectangle(width/2, height/2, width, height, 0x000000).setAlpha(0.5).setDepth(199).setInteractive();
+        this.add.image(bgX, bgY, 'winBG').setDepth(200).setScale(bgScale);
+        const flag = this.add.image(flagX, flagY, 'flagIndonesia').setDepth(201).setScale(flagScale);
 
-    // KLIK → lebih gelap + animasi kecil
-    btn.on('pointerdown', () => {
+        const createGlow = (color, scaleOffset, alpha) => {
+            return this.add.image(flag.x, flag.y, 'flagIndonesia').setDepth(200).setScale(flag.scale * scaleOffset).setTint(color).setAlpha(alpha);
+        };
 
-        btn.setTint(0xbbbbbb); // lebih gelap
+        const glow1 = createGlow(0xffffff, 1.05, 0.5); 
+        const glow2 = createGlow(0xffffff, 1.1, 0.3);  
 
         this.tweens.add({
-            targets: btn,
-            scale: btn.scale * 0.9,
-            duration: 80,
-            yoyo: true,
-            ease: 'Quad.easeOut'
+            targets: [glow1, glow2], scaleX: '+=0.05', scaleY: '+=0.05', alpha: '-=0.2', duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
         });
 
-    });
+        const replay = this.add.image(replayX, replayY, 'btnReplay').setInteractive({ useHandCursor: true }).setDepth(202).setScale(btnScale);
+        const home = this.add.image(homeX, homeY, 'btnHome').setInteractive({ useHandCursor: true }).setDepth(202).setScale(btnScale);
+        const next = this.add.image(nextX, nextY, 'btnNext').setInteractive({ useHandCursor: true }).setDepth(202).setScale(btnScale);
 
-    // LEPAS KLIK
-    btn.on('pointerup', () => {
-        btn.setTint(0xdddddd);
-    });
+        this.addButtonEffect(replay);
+        this.addButtonEffect(home);
+        this.addButtonEffect(next);
 
-}
+        replay.on('pointerdown', () => {
+            let levelDataStr = localStorage.getItem('levelData');
+            let levelData = levelDataStr ? JSON.parse(levelDataStr) : {};
+            levelData[1] = 2; levelData[2] = 1;
+            localStorage.setItem('levelData', JSON.stringify(levelData));
+            this.scene.restart();
+        });
 
+        home.on('pointerdown', () => {
+            let levelDataStr = localStorage.getItem('levelData');
+            let levelData = levelDataStr ? JSON.parse(levelDataStr) : {};
+            levelData[1] = 2; levelData[2] = 1;
+            localStorage.setItem('levelData', JSON.stringify(levelData));
+            this.scene.start('level');
+        });
 
-showWinScreen() {
+        next.on('pointerdown', () => {
+            let levelDataStr = localStorage.getItem('levelData');
+            let levelData = levelDataStr ? JSON.parse(levelDataStr) : {};
+            levelData[1] = 2; levelData[2] = 1;
+            localStorage.setItem('levelData', JSON.stringify(levelData));
+            this.scene.start('gameplay2');
+        });
+    }
 
-    const { width, height } = this.scale;
+    showLoseScreen() {
+        const { width, height } = this.scale;
+        this.gameOver = true;
+        this.tweens.killAll();
+        
+        const textX = 660, textY = 128;
+        const xIconX = 660, xIconY = 372;
+        const replayX = 565, replayY = 615;
+        const homeX = 755, homeY = 615;
+        const textScale = 0.25, xScale = 1.37, btnScale = 0.28;
 
-    // ===== POSISI MANUAL =====
-    const bgX = 670;
-    const bgY = 130;
+        const blocker = this.add.rectangle(width/2, height/2, width, height, 0x000000).setAlpha(0.6).setDepth(500).setInteractive();
+        blocker.on('pointerdown', () => {});
 
-    const flagX = 660;
-    const flagY = 373;
+        this.add.image(textX, textY, 'loseText').setDepth(501).setScale(textScale);
+        this.add.image(xIconX, xIconY, 'iconX').setDepth(501).setScale(xScale);
 
-    const replayX = 500;
-    const replayY = 610;
+        const replay = this.add.image(replayX, replayY, 'btnReplayLose').setInteractive({ useHandCursor: true }).setDepth(502).setScale(btnScale);
+        const home = this.add.image(homeX, homeY, 'btnHomeLose').setInteractive({ useHandCursor: true }).setDepth(502).setScale(btnScale);
+        
+        this.addButtonEffect(replay);
+        this.addButtonEffect(home);
 
-    const homeX = 660;
-    const homeY = 610;
-
-    const nextX = 820;
-    const nextY = 610;
-
-    // ===== UKURAN =====
-    const bgScale = 0.25;
-    const flagScale = 0.59;
-    const btnScale = 0.28;
-
-
-    // overlay hitam
-    this.add.rectangle(width/2, height/2, width, height, 0x000000)
-        .setAlpha(0.5)
-        .setDepth(199)
-        .setInteractive();
-
-    // background menang
-    this.add.image(bgX, bgY, 'winBG')
-        .setDepth(200)
-        .setScale(bgScale);
-
-    // bendera
-    const flag = this.add.image(flagX, flagY, 'flagIndonesia')
-    .setDepth(201)
-    .setScale(flagScale);
-
-   // ===== EFEK CAHAYA MENYINARI SISI BENDERA (GLOW EFFECT) =====
-
-    // 1. Buat "Bayangan Cahaya" di bawah bendera
-    // Kita buat 2 lapis supaya efek pendarannya halus
-    const createGlow = (color, scaleOffset, alpha) => {
-        return this.add.image(flag.x, flag.y, 'flagIndonesia')
-            .setDepth(200) // Di bawah bendera (201)
-            .setScale(flag.scale * scaleOffset)
-            .setTint(color)
-            .setAlpha(alpha);
-    };
-
-    const glow1 = createGlow(0xffffff, 1.05, 0.5); // Cahaya dalam (Kuning)
-    const glow2 = createGlow(0xffffff, 1.1, 0.3);  // Cahaya luar (Putih)
-
-    // 2. Animasi Cahaya Menyinar (Berdenyut/Pulse)
-    this.tweens.add({
-        targets: [glow1, glow2],
-        scaleX: '+=0.05',
-        scaleY: '+=0.05',
-        alpha: '-=0.2',
-        duration: 1000,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.easeInOut'
-    });
-
-    
-
-    // tombol replay
-    const replay = this.add.image(replayX, replayY, 'btnReplay')
-        .setInteractive({ useHandCursor: true })
-        .setDepth(202)
-        .setScale(btnScale);
-
-    // tombol home
-    const home = this.add.image(homeX, homeY, 'btnHome')
-        .setInteractive({ useHandCursor: true })
-        .setDepth(202)
-        .setScale(btnScale);
-
-    // tombol next
-    const next = this.add.image(nextX, nextY, 'btnNext')
-        .setInteractive({ useHandCursor: true })
-        .setDepth(202)
-        .setScale(btnScale);
-
-    // untuk efek
-    this.addButtonEffect(replay);
-    this.addButtonEffect(home);
-    this.addButtonEffect(next);
-
-
-    replay.on('pointerdown', () => {
-  let levelDataStr = localStorage.getItem('levelData');
-        let levelData = levelDataStr ? JSON.parse(levelDataStr) : {};
-
-        levelData[1] = 2;
-        levelData[2] = 1;
-
-        localStorage.setItem('levelData', JSON.stringify(levelData));
-
-        this.scene.restart();
-    });
-
-    home.on('pointerdown', () => {
-  let levelDataStr = localStorage.getItem('levelData');
-        let levelData = levelDataStr ? JSON.parse(levelDataStr) : {};
-
-        levelData[1] = 2;
-        levelData[2] = 1;
-
-        localStorage.setItem('levelData', JSON.stringify(levelData));
-
-        this.scene.start('level');
-    });
-
-    next.on('pointerdown', () => {
-
-        let levelDataStr = localStorage.getItem('levelData');
-        let levelData = levelDataStr ? JSON.parse(levelDataStr) : {};
-
-        levelData[1] = 2;
-        levelData[2] = 1;
-
-        localStorage.setItem('levelData', JSON.stringify(levelData));
-
-        this.scene.start('gameplay2');
-    });
-
-}
-
-showLoseScreen() {
-
-    const { width, height } = this.scale;
-
-    // STOP GAME
-    this.gameOver = true;
-    this.tweens.killAll();
-    
-
-    // ===== POSISI =====
-    const textX = 660;
-    const textY = 128;
-
-    const xIconX = 660;
-    const xIconY = 372;
-
-    const replayX = 565;
-    const replayY = 615;
-
-    const homeX = 755;
-    const homeY = 615;
-
-    const textScale = 0.25;
-    const xScale = 1.37;
-    const btnScale = 0.28;
-
-    // overlay
-    const blocker = this.add.rectangle(width/2, height/2, width, height, 0x000000)
-        .setAlpha(0.6)
-        .setDepth(500)
-        .setInteractive();
-
-    blocker.on('pointerdown', () => {});
-
-    // tulisan kalah
-    this.add.image(textX, textY, 'loseText')
-        .setDepth(501)
-        .setScale(textScale);
-
-    // icon X
-    this.add.image(xIconX, xIconY, 'iconX')
-        .setDepth(501)
-        .setScale(xScale);
-
-    // tombol replay
-    const replay = this.add.image(replayX, replayY, 'btnReplayLose')
-        .setInteractive({ useHandCursor: true })
-        .setDepth(502)
-        .setScale(btnScale);
-
-    // tombol home
-    const home = this.add.image(homeX, homeY, 'btnHomeLose')
-        .setInteractive({ useHandCursor: true })
-        .setDepth(502)
-        .setScale(btnScale);
-    
-    // untuk efek
-    this.addButtonEffect(replay);
-    this.addButtonEffect(home);
-
-    replay.on('pointerdown', () => {
-        this.scene.restart();
-    });
-
-    home.on('pointerdown', () => {
-        this.scene.start('level');
-    });
-
-}
+        replay.on('pointerdown', () => { this.scene.restart(); });
+        home.on('pointerdown', () => { this.scene.start('level'); });
+    }
 }
