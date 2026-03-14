@@ -67,7 +67,8 @@ class levelScene extends Phaser.Scene {
           ease: 'Quad.easeOut'
       });
 
-      localStorage.removeItem('levelData');
+     
+      localStorage.clear();
       
       // Matikan BGM sepenuhnya kalau mau balik ke menu biar di menu mulai baru lagi
       // atau biarkan saja kalau mau lanjut terus
