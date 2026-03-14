@@ -25,10 +25,51 @@ class gameplayScene1 extends Phaser.Scene {
         this.load.image('iconX', 'asset/x.png');
         this.load.image('btnReplayLose', 'asset/replay_kalah.png');
         this.load.image('btnHomeLose', 'asset/home_kalah.png');
+
+        this.load.image('hintBG','asset/popuphint.png');
+        this.load.image('btnYes','asset/btn_yes.png');
+        this.load.image('btnNo','asset/btn_no.png');
     }
 
     create() {
-        const { width, height } = this.scale;
+
+this.usedHintQuestions = [];
+//============ jawaban warna bendera ============
+this.flagAnswers = [
+{
+text:"ATAS MERAH - BAWAH PUTIH",
+top:0xD9252B,
+bottom:0xFFFFFF
+},
+{
+text:"MERAH DI BAGIAN ATAS",
+top:0xD9252B
+},
+{
+text:"PUTIH DI BAGIAN BAWAH",
+bottom:0xFFFFFF
+}
+];
+
+// ================= SISTEM HINT =================
+let hintData = localStorage.getItem('hintData');
+if (hintData === null) {
+    this.hintCount = 3;
+    localStorage.setItem('hintData', 3);
+} else {
+    this.hintCount = parseInt(hintData);
+}
+
+//========== soal hint ===============
+this.hintQuestions = [
+{q:"Apa warna atas bendera Indonesia?",a:"Merah",b:"Putih",c:"Biru",d:"Kuning",correct:"a"},
+{q:"Apa warna bawah bendera Indonesia?",a:"Hijau",b:"Putih",c:"Merah",d:"Biru",correct:"b"},
+{q:"Bendera Jepang warna apa?",a:"Merah Putih",b:"Merah",c:"Putih",d:"Biru",correct:"b"},
+{q:"Bendera Perancis ada berapa warna?",a:"2",b:"3",c:"4",d:"5",correct:"b"},
+// tambahkan sampai 22
+]
+
+const { width, height } = this.scale;
 
         // 1. PASANG BACKGROUND
         this.add.image(width / 2, height / 2, 'bgBoard').setDisplaySize(width, height);
@@ -288,7 +329,7 @@ class gameplayScene1 extends Phaser.Scene {
         this.timerTween = this.tweens.add({
             targets: timerData,
             value: 0,
-            duration: 10000,
+            duration: 50000,
             ease: 'Linear',
             onUpdate: () => {
                 timerFill.clear();
@@ -300,8 +341,17 @@ class gameplayScene1 extends Phaser.Scene {
             }
         });
 
-        this.add.image(60, height - 60, 'btnHint').setInteractive().setScale(0.8)
-            .on('pointerdown', () => alert("Atas Merah, Bawah Putih!"));
+const btnHint = this.add.image(60, height - 60, 'btnHint')
+.setInteractive()
+.setScale(0.8);
+
+btnHint.on('pointerdown', () => {
+if (this.hintCount <= 0){
+        alert("Hint habis!");
+        return;
+    }
+    this.showHintConfirm();
+});
             
     } // <--- AKHIR DARI FUNGSI CREATE. Nggak ada tulisan merah lagi di bawah sini.
 
@@ -337,6 +387,27 @@ class gameplayScene1 extends Phaser.Scene {
     }
 
     showWinScreen() {
+
+// ================= REWARD HINT LEVEL 1 =================
+
+let rewardLevel1 = localStorage.getItem('rewardLevel1');
+
+if(!rewardLevel1){
+    let hintData = localStorage.getItem('hintData');
+    let hint = hintData ? parseInt(hintData) : 0;
+
+    hint += 1;
+
+    localStorage.setItem('hintData', hint);
+
+    // tandai sudah pernah dapat reward
+    localStorage.setItem('rewardLevel1', true);
+
+}
+
+
+
+
         const { width, height } = this.scale;
         const bgX = 670, bgY = 130;
         const flagX = 660, flagY = 373;
@@ -419,4 +490,194 @@ class gameplayScene1 extends Phaser.Scene {
         replay.on('pointerdown', () => { this.scene.restart(); });
         home.on('pointerdown', () => { this.scene.start('level'); });
     }
+
+
+    showHintConfirm(){
+
+const {width,height} = this.scale;
+
+if(this.timerTween) this.timerTween.pause();
+
+// background gelap
+const bg = this.add.rectangle(width/2,height/2,width,height,0x000000)
+.setAlpha(0.6)
+.setDepth(600)
+.setInteractive();
+
+// gambar popup
+const box = this.add.image(width/2,height/2,'hintBG')
+.setDepth(601)
+.setScale(0.49);
+
+// tombol YA
+const btnYes = this.add.image(width/2-105,height/2+55,'btnYes')
+.setInteractive()
+.setDepth(602)
+.setScale(0.092);
+
+// tombol TIDAK
+const btnNo = this.add.image(width/2+70,height/2+55,'btnNo')
+.setInteractive()
+.setDepth(602)
+.setScale(0.092);
+
+
+// tombol tidak
+btnNo.on('pointerdown',()=>{
+
+bg.destroy();
+box.destroy();
+btnYes.destroy();
+btnNo.destroy();
+
+if(this.timerTween) this.timerTween.resume();
+
+});
+
+
+btnYes.on('pointerdown',()=>{
+
+bg.destroy();
+box.destroy();
+btnYes.destroy();
+btnNo.destroy();
+
+this.showQuizHint();
+
+});
+
+}
+
+
+
+showQuizHint(){
+
+// 🔴 jika hint sudah habis langsung keluar
+if(this.hintCount <= 0){
+    alert("Hint sudah habis!");
+    if(this.timerTween) this.timerTween.resume();
+    return;
+}
+
+
+const {width,height} = this.scale;
+
+let availableQuestions = this.hintQuestions.filter((q,i)=>{
+    return !this.usedHintQuestions.includes(i);
+});
+
+if(availableQuestions.length === 0){
+    alert("Semua soal hint sudah dipakai!");
+    return;
+}
+
+let randomIndex = Phaser.Math.Between(0,availableQuestions.length-1);
+let data = availableQuestions[randomIndex];
+
+// simpan index yang sudah dipakai
+let originalIndex = this.hintQuestions.indexOf(data);
+this.usedHintQuestions.push(originalIndex);
+
+const bg = this.add.rectangle(width/2,height/2,width,height,0x000000)
+.setAlpha(0.7)
+.setDepth(700)
+.setInteractive();
+
+const box = this.add.rectangle(width/2,height/2,700,400,0xffffff)
+.setDepth(701)
+.setStrokeStyle(4,0x000000);
+
+const question = this.add.text(width/2,height/2-120,data.q,{
+fontSize:"28px",
+color:"#000",
+wordWrap:{width:600}
+})
+.setOrigin(0.5)
+.setDepth(702);
+
+let optA,optB,optC,optD;
+
+// fungsi hapus semua popup
+const destroyAll = ()=>{
+    bg.destroy();
+    box.destroy();
+    question.destroy();
+    optA.destroy();
+    optB.destroy();
+    optC.destroy();
+    optD.destroy();
+};
+
+const createOption = (text,y,key)=>{
+
+let btn = this.add.text(width/2,y,text,{
+fontSize:"26px",
+backgroundColor:"#dddddd",
+padding:{left:20,right:20,top:10,bottom:10}
+})
+.setOrigin(0.5)
+.setInteractive()
+.setDepth(702);
+
+btn.on("pointerdown",()=>{
+
+// kurangi hint setiap memilih jawaban
+this.hintCount--;
+localStorage.setItem('hintData', this.hintCount);
+
+
+if(key === data.correct){
+
+    destroyAll();
+    this.showHintAnswer();
+
+    if(this.timerTween) this.timerTween.resume();
+
+}else{
+
+    alert("Jawaban salah! Sisa hint: " + this.hintCount);
+
+    // jika hint habis langsung tutup popup
+    if(this.hintCount <= 0){
+        destroyAll();
+        if(this.timerTween) this.timerTween.resume();
+        return;
+    }
+
+}
+    
+});
+
+return btn;
+};
+
+optA = createOption("A. "+data.a,height/2-20,"a");
+optB = createOption("B. "+data.b,height/2+40,"b");
+optC = createOption("C. "+data.c,height/2+100,"c");
+optD = createOption("D. "+data.d,height/2+160,"d");
+
+}
+
+
+showHintAnswer(){
+
+let randomIndex = Phaser.Math.Between(0,this.flagAnswers.length-1);
+let hint = this.flagAnswers[randomIndex];
+
+alert("Petunjuk: " + hint.text);
+
+// jika ada top
+if(hint.top){
+    this.selectedColor = hint.top;
+    this.updateBrushColor(hint.top);
+}
+
+// jika ada bottom
+if(hint.bottom){
+    this.selectedColor = hint.bottom;
+    this.updateBrushColor(hint.bottom);
+}
+
+}
+
 }
