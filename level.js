@@ -6,7 +6,7 @@ class levelScene extends Phaser.Scene {
   preload() {
     this.load.image('bgLevel', 'asset/Level.png');
     this.load.image('garis', 'asset/garis.png');
-    this.load.image('TEXTLEVEL', 'asset/TEXT LEVEL.png');
+    this.load.image('TEXTLEVEL', 'asset/text_level.png');
     this.load.image('tombolback', 'asset/tombolback.png');
 
     // preload button level
@@ -14,6 +14,7 @@ class levelScene extends Phaser.Scene {
     this.load.image('levellock', 'asset/levellock.png');   // locked
     this.load.image('level1', 'asset/level1.png'); // completed
     this.load.image('level2', 'asset/level2.png'); // completed
+    this.load.audio('pop', 'asset/pop.mp3');
   }
 
   create() {
@@ -38,11 +39,11 @@ class levelScene extends Phaser.Scene {
     this.add.image(width / 2, height * 0.60, 'garis').setScale(1.0);
 
     // TEXT LEVEL
-    this.add.image(width / 2, height * 0.14, 'TEXTLEVEL').setScale(0.41);
+    this.add.image(width / 2, height * 0.14, 'TEXTLEVEL').setScale(1);
 
     // tombol back
     const tombolback = this.add.image(width * 0.055, height * 0.080, 'tombolback')
-      .setScale(0.13)
+      .setScale(1)
       .setInteractive({ useHandCursor: true });
 
     // hover → sedikit gelap
@@ -57,6 +58,7 @@ class levelScene extends Phaser.Scene {
 
     // klik
     tombolback.on('pointerdown', () => {
+      this.sound.play('pop');
       tombolback.setTint(0xeeeeee);
 
       this.tweens.add({
@@ -174,6 +176,7 @@ class levelScene extends Phaser.Scene {
       btn.setInteractive({ useHandCursor: true });
 
       btn.on('pointerdown', () => {
+        this.sound.play('pop', { volume: 0.7 });
         const levelSceneMap = {
           1:  'gameplay1',
           2:  'gameplay2',

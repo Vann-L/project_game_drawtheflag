@@ -15,7 +15,7 @@ class gameplayScene1 extends Phaser.Scene {
         this.load.image('buluKuas', 'asset/bulu_kuas.png');
         this.load.image('iconjam', 'asset/ICON JAM.png');
 
-        this.load.image('winBG', 'asset/ANIMASI MENANG.png');
+        this.load.image('winBG', 'asset/tulisan_menang.png');
         this.load.image('btnHome', 'asset/home.png');
         this.load.image('btnReplay', 'asset/ulang.png');
         this.load.image('btnNext', 'asset/next.png');
@@ -29,47 +29,52 @@ class gameplayScene1 extends Phaser.Scene {
         this.load.image('hintBG','asset/popuphint.png');
         this.load.image('btnYes','asset/btn_yes.png');
         this.load.image('btnNo','asset/btn_no.png');
+
+        this.load.audio('suaraKuas', 'asset/suara_kuas.mp3');
+            this.load.audio('pop', 'asset/pop.mp3');
+        this.load.audio('soundMenang', 'asset/menang.mp3'); 
+        this.load.audio('soundKalah', 'asset/kalah.mp3'); 
     }
 
     create() {
 
-this.usedHintQuestions = [];
-//============ jawaban warna bendera ============
-this.flagAnswers = [
-{
-text:"ATAS MERAH - BAWAH PUTIH",
-top:0xD9252B,
-bottom:0xFFFFFF
-},
-{
-text:"MERAH DI BAGIAN ATAS",
-top:0xD9252B
-},
-{
-text:"PUTIH DI BAGIAN BAWAH",
-bottom:0xFFFFFF
-}
-];
+        this.usedHintQuestions = [];
+        //============ jawaban warna bendera ============
+        this.flagAnswers = [
+        {
+        text:"ATAS MERAH - BAWAH PUTIH",
+        top:0xD9252B,
+        bottom:0xFFFFFF
+        },
+        {
+        text:"MERAH DI BAGIAN ATAS",
+        top:0xD9252B
+        },
+        {
+        text:"PUTIH DI BAGIAN BAWAH",
+        bottom:0xFFFFFF
+        }
+        ];
 
-// ================= SISTEM HINT =================
-let hintData = localStorage.getItem('hintData');
-if (hintData === null) {
-    this.hintCount = 3;
-    localStorage.setItem('hintData', 3);
-} else {
-    this.hintCount = parseInt(hintData);
-}
+        // ================= SISTEM HINT =================
+        let hintData = localStorage.getItem('hintData');
+        if (hintData === null) {
+            this.hintCount = 3;
+            localStorage.setItem('hintData', 3);
+        } else {
+            this.hintCount = parseInt(hintData);
+        }
 
-//========== soal hint ===============
-this.hintQuestions = [
-{q:"Apa warna atas bendera Indonesia?",a:"Merah",b:"Putih",c:"Biru",d:"Kuning",correct:"a"},
-{q:"Apa warna bawah bendera Indonesia?",a:"Hijau",b:"Putih",c:"Merah",d:"Biru",correct:"b"},
-{q:"Bendera Jepang warna apa?",a:"Merah Putih",b:"Merah",c:"Putih",d:"Biru",correct:"b"},
-{q:"Bendera Perancis ada berapa warna?",a:"2",b:"3",c:"4",d:"5",correct:"b"},
-// tambahkan sampai 22
-]
+        //========== soal hint ===============
+        this.hintQuestions = [
+        {q:"Apa warna atas bendera Indonesia?",a:"Merah",b:"Putih",c:"Biru",d:"Kuning",correct:"a"},
+        {q:"Apa warna bawah bendera Indonesia?",a:"Hijau",b:"Putih",c:"Merah",d:"Biru",correct:"b"},
+        {q:"Bendera Jepang warna apa?",a:"Merah Putih",b:"Merah",c:"Putih",d:"Biru",correct:"b"},
+        {q:"Bendera Perancis ada berapa warna?",a:"2",b:"3",c:"4",d:"5",correct:"b"},
+        // tambahkan sampai 22
+        ]
 
-const { width, height } = this.scale;
+        const { width, height } = this.scale;
 
         // 1. PASANG BACKGROUND
         this.add.image(width / 2, height / 2, 'bgBoard').setDisplaySize(width, height);
@@ -127,12 +132,11 @@ const { width, height } = this.scale;
             .setStrokeStyle(3, 0x000000).setDepth(20);
 
         // --- 🖌️ IKON KUAS ---
-        this.add.image(width - 120, height - 95, 'bgKuas').setScale(0.7);
+        this.add.image(width - 185, height - 95, 'bgKuas').setScale(0.7);
         const gagang = this.add.image(0, 0, 'gagangKuas');
-        // 👇 Ganti angka -15 di bawah ini kalau bulunya menceng sama gagangnya 👇
         this.bulu = this.add.image(0, 0, 'buluKuas'); 
 
-        this.brushContainer = this.add.container(width - 120, height - 100, [gagang, this.bulu])
+        this.brushContainer = this.add.container(width - 185, height - 100, [gagang, this.bulu])
             .setScale(0.2)
             .setDepth(30);
 
@@ -151,7 +155,6 @@ const { width, height } = this.scale;
             zone.setData('isPainting', true);
             this.isAnimating = true; // 🔥 NYALAIN GEMBOK
 
-            // 🔥 FIX BUG: Kunci warna di sini
             const paintColor = this.selectedColor; 
 
             const paintGraphics = this.add.graphics().setDepth(5);
@@ -180,6 +183,9 @@ const { width, height } = this.scale;
             });
 
             const startPainting = () => {
+                let sfx = this.sound.add('suaraKuas', { volume: 5.0 });
+                sfx.play();
+
                 const animData = { progress: 0 }; 
 
                 this.tweens.add({
@@ -190,7 +196,6 @@ const { width, height } = this.scale;
                     
                     onUpdate: () => {
                         paintGraphics.clear();
-                        
                         paintGraphics.fillStyle(paintColor, 1);
 
                         const currentX = startX + (animData.progress * zoneW);
@@ -208,9 +213,11 @@ const { width, height } = this.scale;
                     },
 
                     onComplete: () => {
+                        sfx.stop();
+
                         this.tweens.add({
                             targets: this.brushContainer,
-                            x: width - 120,
+                            x: width - 185,
                             y: height - 100,
                             angle: 0,
                             duration: 500,
@@ -228,8 +235,6 @@ const { width, height } = this.scale;
                         zone.setData('colorCode', paintColor);
                         zone.setData('isPainting', false);
                         this.isAnimating = false; // 🔥 MATIIN GEMBOK
-                        
-                        this.tweens.add({ targets: zone, scale: 1.02, duration: 150, yoyo: true });
 
                         this.checkWinCondition(zoneTop, zoneBottom);
                     }
@@ -243,29 +248,32 @@ const { width, height } = this.scale;
 
         // ================= UI ELEMENTS =================
         const tombolback = this.add.image(width * 0.055, height * 0.080, 'tombolback')
-            .setScale(0.13)
+            .setScale(1)
             .setInteractive({ useHandCursor: true });
 
         tombolback.on('pointerover', () => { tombolback.setTint(0xeeeeee); });
         tombolback.on('pointerout', () => { tombolback.clearTint(); });
         tombolback.on('pointerdown', () => {
+           this.sound.play('pop');
             tombolback.setTint(0xeeeeee);
             this.tweens.add({ targets: tombolback, scale: 0.115, duration: 80, yoyo: true, ease: 'Quad.easeOut' });
             this.scene.start('level'); 
         });
         tombolback.on('pointerup', () => { tombolback.setTint(0xdddddd); });
 
-        const pMerah = this.add.image(width - 100, height/1.5 - 10, 'paletMerah').setInteractive().setScale(0.8);
+        const pMerah = this.add.image(width - 90, height/1.470 - 10, 'paletMerah').setInteractive().setScale(0.8);
         pMerah.on('pointerdown', () => {
             if (this.isAnimating) return; // 🔥 CEGAH KLIK PALET
+            this.sound.play('pop', { volume: 0.6 });
             this.selectedColor = 0xD9252B; 
             this.updateBrushColor(0xD9252B);
             this.tweens.add({ targets: pMerah, scale: 0.9, duration: 100, yoyo: true });
         });
 
-        const pPutih = this.add.image(width - 100, height/1.8 + 10, 'paletPutih').setInteractive().setScale(0.8);
+        const pPutih = this.add.image(width - 90, height/1.8 + 10, 'paletPutih').setInteractive().setScale(0.8);
         pPutih.on('pointerdown', () => {
             if (this.isAnimating) return; // 🔥 CEGAH KLIK PALET
+             this.sound.play('pop', { volume: 0.6 });
             this.selectedColor = 0xFFFFFF; 
             this.updateBrushColor(0xFFFFFF);
             this.tweens.add({ targets: pPutih, scale: 0.9, duration: 100, yoyo: true });
@@ -329,7 +337,7 @@ const { width, height } = this.scale;
         this.timerTween = this.tweens.add({
             targets: timerData,
             value: 0,
-            duration: 50000,
+            duration: 20000,
             ease: 'Linear',
             onUpdate: () => {
                 timerFill.clear();
@@ -341,22 +349,22 @@ const { width, height } = this.scale;
             }
         });
 
-const btnHint = this.add.image(60, height - 60, 'btnHint')
-.setInteractive()
-.setScale(0.8);
+        const btnHint = this.add.image(60, height - 60, 'btnHint')
+        .setInteractive()
+        .setScale(0.8);
 
-btnHint.on('pointerdown', () => {
-if (this.hintCount <= 0){
-        alert("Hint habis!");
-        return;
-    }
-    this.showHintConfirm();
-});
+        btnHint.on('pointerdown', () => {
+        if (this.hintCount <= 0){
+                alert("Hint habis!");
+                return;
+            }
+            this.showHintConfirm();
+        });
             
-    } // <--- AKHIR DARI FUNGSI CREATE. Nggak ada tulisan merah lagi di bawah sini.
+    } 
 
     // ==================================================================
-    // 🔥 FUNGSI-FUNGSI LUAR (DITARUH DI SINI BARU BENER) 🔥
+    // 🔥 FUNGSI-FUNGSI LUAR 🔥
     // ==================================================================
     updateBrushColor(color) {
         this.bulu.setTint(color);
@@ -380,6 +388,7 @@ if (this.hintCount <= 0){
         btn.on('pointerover', () => { btn.setTint(0xdddddd); });
         btn.on('pointerout', () => { btn.clearTint(); });
         btn.on('pointerdown', () => {
+            this.sound.play('pop', { volume: 0.8 });
             btn.setTint(0xbbbbbb);
             this.tweens.add({ targets: btn, scale: btn.scale * 0.9, duration: 80, yoyo: true, ease: 'Quad.easeOut' });
         });
@@ -387,26 +396,30 @@ if (this.hintCount <= 0){
     }
 
     showWinScreen() {
+        // 🔥 MAINKAN SFX MENANG 🔥
+        this.sound.play('soundMenang', { volume: 1.0 });
 
-// ================= REWARD HINT LEVEL 1 =================
+        // 🔥 AMBIL BGM GLOBAL DARI MENU & KECILKAN VOLUMENYA (DUCKING) 🔥
+        let globalBgm = this.sound.get('bgm_menu');
+        if (globalBgm && globalBgm.isPlaying) {
+            this.tweens.add({
+                targets: globalBgm,
+                volume: 0.15, 
+                duration: 800,
+                ease: 'Linear'
+            });
+        }
 
-let rewardLevel1 = localStorage.getItem('rewardLevel1');
-
-if(!rewardLevel1){
-    let hintData = localStorage.getItem('hintData');
-    let hint = hintData ? parseInt(hintData) : 0;
-
-    hint += 1;
-
-    localStorage.setItem('hintData', hint);
-
-    // tandai sudah pernah dapat reward
-    localStorage.setItem('rewardLevel1', true);
-
-}
-
-
-
+        // ================= REWARD HINT LEVEL 1 =================
+        let rewardLevel1 = localStorage.getItem('rewardLevel1');
+        
+        if(!rewardLevel1){
+            let hintData = localStorage.getItem('hintData');
+            let hint = hintData ? parseInt(hintData) : 0;
+            hint += 1;
+            localStorage.setItem('hintData', hint);
+            localStorage.setItem('rewardLevel1', true);
+        }
 
         const { width, height } = this.scale;
         const bgX = 670, bgY = 130;
@@ -416,29 +429,53 @@ if(!rewardLevel1){
         const nextX = 820, nextY = 610;
         const bgScale = 0.25, flagScale = 0.59, btnScale = 0.28;
 
-        this.add.rectangle(width/2, height/2, width, height, 0x000000).setAlpha(0.5).setDepth(199).setInteractive();
-        this.add.image(bgX, bgY, 'winBG').setDepth(200).setScale(bgScale);
-        const flag = this.add.image(flagX, flagY, 'flagIndonesia').setDepth(201).setScale(flagScale);
+        // 1. BG Gelap: Fade in biasa
+        const blocker = this.add.rectangle(width/2, height/2, width, height, 0x000000).setAlpha(0).setDepth(197).setInteractive();
+        this.tweens.add({ targets: blocker, alpha: 0.6, duration: 300 });
 
-        const createGlow = (color, scaleOffset, alpha) => {
-            return this.add.image(flag.x, flag.y, 'flagIndonesia').setDepth(200).setScale(flag.scale * scaleOffset).setTint(color).setAlpha(alpha);
-        };
+        // 🔥 2. MEMBUAT EFEK CAHAYA (GLOW) HALUS DI BELAKANG BENDERA 🔥
+        const glowContainer = this.add.container(flagX, flagY).setDepth(198).setAlpha(0);
+        
+        for (let i = 1; i <= 6; i++) {
+            const g = this.add.graphics();
+            g.fillStyle(0xffffff, 0.15 - (i * 0.02)); 
+            g.fillRoundedRect(-180 - (i*15), -120 - (i*15), 360 + (i*30), 240 + (i*30), 30 + (i*5));
+            g.setBlendMode(Phaser.BlendModes.ADD); 
+            glowContainer.add(g);
+        }
 
-        const glow1 = createGlow(0xffffff, 1.05, 0.5); 
-        const glow2 = createGlow(0xffffff, 1.1, 0.3);  
+        // 3. Siapin elemen: Ukuran mulai dari kecil (0.8x target) & transparan
+        const titleScaleTarget = 1; 
+        const title = this.add.image(bgX, bgY, 'winBG').setDepth(200).setScale(bgScale * 0.8).setAlpha(0);
+        const flag = this.add.image(flagX, flagY, 'flagIndonesia').setDepth(201).setScale(flagScale * 0.8).setAlpha(0);
+        const replay = this.add.image(replayX, replayY, 'btnReplay').setInteractive({ useHandCursor: true }).setDepth(202).setScale(btnScale * 0.8).setAlpha(0);
+        const home = this.add.image(homeX, homeY, 'btnHome').setInteractive({ useHandCursor: true }).setDepth(202).setScale(btnScale * 0.8).setAlpha(0);
+        const next = this.add.image(nextX, nextY, 'btnNext').setInteractive({ useHandCursor: true }).setDepth(202).setScale(btnScale * 0.8).setAlpha(0);
 
-        this.tweens.add({
-            targets: [glow1, glow2], scaleX: '+=0.05', scaleY: '+=0.05', alpha: '-=0.2', duration: 1000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
+        // 4. ANIMASI MUNCUL
+        this.tweens.add({ targets: title, scale: titleScaleTarget, alpha: 1, duration: 400, ease: 'Back.out' });
+        this.tweens.add({ targets: flag, scale: flagScale, alpha: 1, duration: 400, ease: 'Back.out', delay: 100 });
+        this.tweens.add({ targets: glowContainer, scale: 1, alpha: 1, duration: 500, ease: 'Power2', delay: 150 });
+        
+        this.time.delayedCall(650, () => {
+            this.tweens.add({ 
+                targets: glowContainer, 
+                scale: 1.05, 
+                alpha: 0.7, 
+                duration: 1200, 
+                yoyo: true, 
+                repeat: -1, 
+                ease: 'Sine.easeInOut' 
+            });
         });
 
-        const replay = this.add.image(replayX, replayY, 'btnReplay').setInteractive({ useHandCursor: true }).setDepth(202).setScale(btnScale);
-        const home = this.add.image(homeX, homeY, 'btnHome').setInteractive({ useHandCursor: true }).setDepth(202).setScale(btnScale);
-        const next = this.add.image(nextX, nextY, 'btnNext').setInteractive({ useHandCursor: true }).setDepth(202).setScale(btnScale);
+        this.tweens.add({ targets: [replay, home, next], scale: btnScale, alpha: 1, duration: 400, ease: 'Back.out', delay: 200 });
 
         this.addButtonEffect(replay);
         this.addButtonEffect(home);
         this.addButtonEffect(next);
 
+        // --- FUNGSI KLIK TOMBOL AMAN ---
         replay.on('pointerdown', () => {
             let levelDataStr = localStorage.getItem('levelData');
             let levelData = levelDataStr ? JSON.parse(levelDataStr) : {};
@@ -464,220 +501,274 @@ if(!rewardLevel1){
         });
     }
 
-    showLoseScreen() {
+  showLoseScreen() {
         const { width, height } = this.scale;
-        this.gameOver = true;
-        this.tweens.killAll();
         
+        // Cek supaya nggak dipanggil 2 kali
+        if (this.gameOver) return; 
+        this.gameOver = true;
+        
+        if (this.timerTween) this.timerTween.stop();
+
+        // 🔥 TRY-CATCH AUDIONYA BIAR NGGAK BIKIN CRASH 🔥
+        try {
+            this.sound.play('soundKalah', { volume: 0.8 }); 
+            
+            let globalBgm = this.sound.get('bgm_menu');
+            if (globalBgm && globalBgm.isPlaying) {
+                this.tweens.add({
+                    targets: globalBgm,
+                    volume: 0.1, 
+                    duration: 500,
+                    ease: 'Linear'
+                });
+            }
+        } catch (e) {
+            console.warn("Audio kalah error/belum dimuat:", e);
+        }
+
         const textX = 660, textY = 128;
         const xIconX = 660, xIconY = 372;
         const replayX = 565, replayY = 615;
         const homeX = 755, homeY = 615;
-        const textScale = 0.25, xScale = 1.37, btnScale = 0.28;
+        const textScale = 1.1, xScale = 1.37, btnScale = 0.28;
 
-        const blocker = this.add.rectangle(width/2, height/2, width, height, 0x000000).setAlpha(0.6).setDepth(500).setInteractive();
-        blocker.on('pointerdown', () => {});
-
-        this.add.image(textX, textY, 'loseText').setDepth(501).setScale(textScale);
-        this.add.image(xIconX, xIconY, 'iconX').setDepth(501).setScale(xScale);
-
-        const replay = this.add.image(replayX, replayY, 'btnReplayLose').setInteractive({ useHandCursor: true }).setDepth(502).setScale(btnScale);
-        const home = this.add.image(homeX, homeY, 'btnHomeLose').setInteractive({ useHandCursor: true }).setDepth(502).setScale(btnScale);
+        const blocker = this.add.rectangle(width/2, height/2, width, height, 0x000000).setAlpha(0).setDepth(500).setInteractive();
         
-        this.addButtonEffect(replay);
-        this.addButtonEffect(home);
+        this.tweens.add({
+            targets: blocker,
+            alpha: 0.7, 
+            duration: 500 
+        });
 
+    // ==================================================================
+        // 🔥 TAMBAHKAN EFEK CAHAYA (GLOW) MERAH DI BELAKANG ICON X 🔥
+        // ==================================================================
+        const glowContainer = this.add.container(xIconX, xIconY).setDepth(500.5).setAlpha(0);
+        
+        // Gunakan image 'iconX' langsung sebagai glow biar bentuknya presisi
+        for (let i = 1; i <= 5; i++) {
+            let glowX = this.add.image(0, 0, 'iconX');
+            
+            // Bikin ukurannya makin membesar ke luar dari skala aslinya (xScale)
+            glowX.setScale(xScale + (i * 0.12)); 
+            
+            // Kasih tint merah penuh biar warnanya nggak pudar
+            glowX.setTint(0xFF0000); 
+            
+            // Makin ke luar, makin transparan
+            glowX.setAlpha(0.25 - (i * 0.04)); 
+            
+            // Tambahkan blend mode ADD biar efek cahayanya nyala terang
+            glowX.setBlendMode(Phaser.BlendModes.ADD);
+            
+            glowContainer.add(glowX);
+        }
+
+        const loseTextImg = this.add.image(textX, textY, 'loseText').setDepth(501).setScale(textScale).setAlpha(0);
+        
+        // 🔥 ICON X: ALPHA SEKARANG FULL (1.0) BIAR MERAH NYA JELAS 🔥
+        const iconXImg = this.add.image(xIconX, xIconY, 'iconX').setDepth(501).setScale(xScale).setAlpha(0);
+
+        const replay = this.add.image(replayX, replayY + 50, 'btnReplayLose').setDepth(502).setScale(btnScale).setAlpha(0);
+        const home = this.add.image(homeX, homeY + 50, 'btnHomeLose').setDepth(502).setScale(btnScale).setAlpha(0);
+
+        // ==================================================================
+        // 🔥 TIMELINE ANIMASI MUNCUL (SUBTIL & COOL) 🔥
+        // ==================================================================
+
+        // Animasi Tulisan Kalah: Cuma Fade In di tempat
+        this.tweens.add({
+            targets: loseTextImg,
+            alpha: 1,
+            duration: 600, 
+            ease: 'Linear', 
+            delay: 100 
+        });
+
+        // 🔥 ANIMASI ICON X: ALPHA 1.0 (FULL MERAH) 🔥
+        this.tweens.add({
+            targets: iconXImg,
+            alpha: 1.0, 
+            duration: 800, 
+            ease: 'Linear', 
+            delay: 200 
+        });
+
+        // 🔥 ANIMASI CAHAYA (GLOW) MERAH: FADE IN 🔥
+        this.tweens.add({
+            targets: glowContainer,
+            alpha: 1, // Cahaya muncul penuh
+            duration: 800, 
+            ease: 'Linear', 
+            delay: 200 
+        });
+
+        // Animasi Tombol: Fade In & Slide Up halus ke posisi asli
+        this.tweens.add({
+            targets: [replay, home],
+            y: replayY, 
+            alpha: 1,
+            duration: 500,
+            ease: 'Cubic.out', 
+            delay: 1000, 
+            onComplete: () => {
+                replay.setInteractive({ useHandCursor: true });
+                home.setInteractive({ useHandCursor: true });
+                this.addButtonEffect(replay);
+                this.addButtonEffect(home);
+            }
+        });
+
+        // --- Logika Klik Tombol Tetap Sama ---
         replay.on('pointerdown', () => { this.scene.restart(); });
         home.on('pointerdown', () => { this.scene.start('level'); });
     }
 
-
     showHintConfirm(){
+        const {width,height} = this.scale;
 
-const {width,height} = this.scale;
+        if(this.timerTween) this.timerTween.pause();
 
-if(this.timerTween) this.timerTween.pause();
+        const bg = this.add.rectangle(width/2,height/2,width,height,0x000000)
+        .setAlpha(0.6)
+        .setDepth(600)
+        .setInteractive();
 
-// background gelap
-const bg = this.add.rectangle(width/2,height/2,width,height,0x000000)
-.setAlpha(0.6)
-.setDepth(600)
-.setInteractive();
+        const box = this.add.image(width/2,height/2,'hintBG')
+        .setDepth(601)
+        .setScale(0.49);
 
-// gambar popup
-const box = this.add.image(width/2,height/2,'hintBG')
-.setDepth(601)
-.setScale(0.49);
+        const btnYes = this.add.image(width/2-105,height/2+55,'btnYes')
+        .setInteractive()
+        .setDepth(602)
+        .setScale(0.092);
 
-// tombol YA
-const btnYes = this.add.image(width/2-105,height/2+55,'btnYes')
-.setInteractive()
-.setDepth(602)
-.setScale(0.092);
+        const btnNo = this.add.image(width/2+70,height/2+55,'btnNo')
+        .setInteractive()
+        .setDepth(602)
+        .setScale(0.092);
 
-// tombol TIDAK
-const btnNo = this.add.image(width/2+70,height/2+55,'btnNo')
-.setInteractive()
-.setDepth(602)
-.setScale(0.092);
+        btnNo.on('pointerdown',()=>{
+            bg.destroy();
+            box.destroy();
+            btnYes.destroy();
+            btnNo.destroy();
+            if(this.timerTween) this.timerTween.resume();
+        });
 
-
-// tombol tidak
-btnNo.on('pointerdown',()=>{
-
-bg.destroy();
-box.destroy();
-btnYes.destroy();
-btnNo.destroy();
-
-if(this.timerTween) this.timerTween.resume();
-
-});
-
-
-btnYes.on('pointerdown',()=>{
-
-bg.destroy();
-box.destroy();
-btnYes.destroy();
-btnNo.destroy();
-
-this.showQuizHint();
-
-});
-
-}
-
-
-
-showQuizHint(){
-
-// 🔴 jika hint sudah habis langsung keluar
-if(this.hintCount <= 0){
-    alert("Hint sudah habis!");
-    if(this.timerTween) this.timerTween.resume();
-    return;
-}
-
-
-const {width,height} = this.scale;
-
-let availableQuestions = this.hintQuestions.filter((q,i)=>{
-    return !this.usedHintQuestions.includes(i);
-});
-
-if(availableQuestions.length === 0){
-    alert("Semua soal hint sudah dipakai!");
-    return;
-}
-
-let randomIndex = Phaser.Math.Between(0,availableQuestions.length-1);
-let data = availableQuestions[randomIndex];
-
-// simpan index yang sudah dipakai
-let originalIndex = this.hintQuestions.indexOf(data);
-this.usedHintQuestions.push(originalIndex);
-
-const bg = this.add.rectangle(width/2,height/2,width,height,0x000000)
-.setAlpha(0.7)
-.setDepth(700)
-.setInteractive();
-
-const box = this.add.rectangle(width/2,height/2,700,400,0xffffff)
-.setDepth(701)
-.setStrokeStyle(4,0x000000);
-
-const question = this.add.text(width/2,height/2-120,data.q,{
-fontSize:"28px",
-color:"#000",
-wordWrap:{width:600}
-})
-.setOrigin(0.5)
-.setDepth(702);
-
-let optA,optB,optC,optD;
-
-// fungsi hapus semua popup
-const destroyAll = ()=>{
-    bg.destroy();
-    box.destroy();
-    question.destroy();
-    optA.destroy();
-    optB.destroy();
-    optC.destroy();
-    optD.destroy();
-};
-
-const createOption = (text,y,key)=>{
-
-let btn = this.add.text(width/2,y,text,{
-fontSize:"26px",
-backgroundColor:"#dddddd",
-padding:{left:20,right:20,top:10,bottom:10}
-})
-.setOrigin(0.5)
-.setInteractive()
-.setDepth(702);
-
-btn.on("pointerdown",()=>{
-
-// kurangi hint setiap memilih jawaban
-this.hintCount--;
-localStorage.setItem('hintData', this.hintCount);
-
-
-if(key === data.correct){
-
-    destroyAll();
-    this.showHintAnswer();
-
-    if(this.timerTween) this.timerTween.resume();
-
-}else{
-
-    alert("Jawaban salah! Sisa hint: " + this.hintCount);
-
-    // jika hint habis langsung tutup popup
-    if(this.hintCount <= 0){
-        destroyAll();
-        if(this.timerTween) this.timerTween.resume();
-        return;
+        btnYes.on('pointerdown',()=>{
+            bg.destroy();
+            box.destroy();
+            btnYes.destroy();
+            btnNo.destroy();
+            this.showQuizHint();
+        });
     }
 
-}
-    
-});
+    showQuizHint(){
+        if(this.hintCount <= 0){
+            alert("Hint sudah habis!");
+            if(this.timerTween) this.timerTween.resume();
+            return;
+        }
 
-return btn;
-};
+        const {width,height} = this.scale;
 
-optA = createOption("A. "+data.a,height/2-20,"a");
-optB = createOption("B. "+data.b,height/2+40,"b");
-optC = createOption("C. "+data.c,height/2+100,"c");
-optD = createOption("D. "+data.d,height/2+160,"d");
+        let availableQuestions = this.hintQuestions.filter((q,i)=>{
+            return !this.usedHintQuestions.includes(i);
+        });
 
-}
+        if(availableQuestions.length === 0){
+            alert("Semua soal hint sudah dipakai!");
+            return;
+        }
 
+        let randomIndex = Phaser.Math.Between(0,availableQuestions.length-1);
+        let data = availableQuestions[randomIndex];
 
-showHintAnswer(){
+        let originalIndex = this.hintQuestions.indexOf(data);
+        this.usedHintQuestions.push(originalIndex);
 
-let randomIndex = Phaser.Math.Between(0,this.flagAnswers.length-1);
-let hint = this.flagAnswers[randomIndex];
+        const bg = this.add.rectangle(width/2,height/2,width,height,0x000000)
+        .setAlpha(0.7)
+        .setDepth(700)
+        .setInteractive();
 
-alert("Petunjuk: " + hint.text);
+        const box = this.add.rectangle(width/2,height/2,700,400,0xffffff)
+        .setDepth(701)
+        .setStrokeStyle(4,0x000000);
 
-// jika ada top
-if(hint.top){
-    this.selectedColor = hint.top;
-    this.updateBrushColor(hint.top);
-}
+        const question = this.add.text(width/2,height/2-120,data.q,{
+        fontSize:"28px",
+        color:"#000",
+        wordWrap:{width:600}
+        })
+        .setOrigin(0.5)
+        .setDepth(702);
 
-// jika ada bottom
-if(hint.bottom){
-    this.selectedColor = hint.bottom;
-    this.updateBrushColor(hint.bottom);
-}
+        let optA,optB,optC,optD;
 
-}
+        const destroyAll = ()=>{
+            bg.destroy();
+            box.destroy();
+            question.destroy();
+            optA.destroy();
+            optB.destroy();
+            optC.destroy();
+            optD.destroy();
+        };
 
+        const createOption = (text,y,key)=>{
+            let btn = this.add.text(width/2,y,text,{
+            fontSize:"26px",
+            backgroundColor:"#dddddd",
+            padding:{left:20,right:20,top:10,bottom:10}
+            })
+            .setOrigin(0.5)
+            .setInteractive()
+            .setDepth(702);
+
+            btn.on("pointerdown",()=>{
+                this.hintCount--;
+                localStorage.setItem('hintData', this.hintCount);
+
+                if(key === data.correct){
+                    destroyAll();
+                    this.showHintAnswer();
+                    if(this.timerTween) this.timerTween.resume();
+                }else{
+                    alert("Jawaban salah! Sisa hint: " + this.hintCount);
+                    if(this.hintCount <= 0){
+                        destroyAll();
+                        if(this.timerTween) this.timerTween.resume();
+                        return;
+                    }
+                }
+            });
+            return btn;
+        };
+
+        optA = createOption("A. "+data.a,height/2-20,"a");
+        optB = createOption("B. "+data.b,height/2+40,"b");
+        optC = createOption("C. "+data.c,height/2+100,"c");
+        optD = createOption("D. "+data.d,height/2+160,"d");
+    }
+
+    showHintAnswer(){
+        let randomIndex = Phaser.Math.Between(0,this.flagAnswers.length-1);
+        let hint = this.flagAnswers[randomIndex];
+
+        alert("Petunjuk: " + hint.text);
+
+        if(hint.top){
+            this.selectedColor = hint.top;
+            this.updateBrushColor(hint.top);
+        }
+
+        if(hint.bottom){
+            this.selectedColor = hint.bottom;
+            this.updateBrushColor(hint.bottom);
+        }
+    }
 }

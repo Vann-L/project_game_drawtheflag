@@ -442,17 +442,24 @@ class menuScene extends Phaser.Scene {
 }
 
 const config = {
-  type: Phaser.AUTO,
+  // 🔥 UBAH DARI AUTO JADI WEBGL BIAR LEBIH SMOOTH
+  type: Phaser.WEBGL, 
   width: 1344, 
   height: 720, 
   backgroundColor: '#000000',
   scale: {
-    mode: Phaser.Scale.NONE, 
+    mode: Phaser.Scale.FIT, 
     autoCenter: Phaser.Scale.CENTER_BOTH 
   },
-  canvasStyle: 'width: 100vw; height: 100vh; object-fit: fill;',
-  scene: [menuScene, levelScene, gameplayScene1], 
+  resolution: window.devicePixelRatio || 1, 
   
+  // 🔥 PASTIKAN 3 BARIS INI ADA BIAR PINGGIRANNYA HALUS
+  antialias: true,
+  antialiasGL: true, 
+  roundPixels: false, // Pastikan ini false biar gambar gak patah-patah
+  
+  scene: [menuScene, levelScene, gameplayScene1], 
 };
 
+// Jangan dihapus, ini yang ngejalanin gamenya
 new Phaser.Game(config);
