@@ -31,21 +31,19 @@ class gameplayScene1 extends Phaser.Scene {
         this.load.image('btnNo','asset/btn_no.png');
 
         this.load.audio('suaraKuas', 'asset/suara_kuas.mp3');
-            this.load.audio('pop', 'asset/pop.mp3');
+        this.load.audio('pop', 'asset/pop.mp3');
         this.load.audio('soundMenang', 'asset/menang.mp3'); 
         this.load.audio('soundKalah', 'asset/kalah.mp3'); 
     }
 
     create() {
 
+        this.gameOver = false; // 🔥 RESET STATE
         this.usedHintQuestions = [];
+
+        this.usedFlagHints = []; // 🔥 tracking hint yang sudah dipakai
         //============ jawaban warna bendera ============
         this.flagAnswers = [
-        {
-        text:"ATAS MERAH - BAWAH PUTIH",
-        top:0xD9252B,
-        bottom:0xFFFFFF
-        },
         {
         text:"MERAH DI BAGIAN ATAS",
         top:0xD9252B
@@ -67,10 +65,31 @@ class gameplayScene1 extends Phaser.Scene {
 
         //========== soal hint ===============
         this.hintQuestions = [
-        {q:"Apa warna atas bendera Indonesia?",a:"Merah",b:"Putih",c:"Biru",d:"Kuning",correct:"a"},
-        {q:"Apa warna bawah bendera Indonesia?",a:"Hijau",b:"Putih",c:"Merah",d:"Biru",correct:"b"},
-        {q:"Bendera Jepang warna apa?",a:"Merah Putih",b:"Merah",c:"Putih",d:"Biru",correct:"b"},
-        {q:"Bendera Perancis ada berapa warna?",a:"2",b:"3",c:"4",d:"5",correct:"b"},
+        {q:"Apa ibu kota Indonesia?",a:"Bandung",b:"Jakarta",c:"Surabaya",d:"Medan",correct:"b"},
+        {q:"Indonesia terletak di benua apa?",a:"Asia",b:"Eropa",c:"Afrika",d:"Australia",correct:"a"},
+        {q:"Apa benua terbesar di dunia?",a:"Afrika",b:"Eropa",c:"Asia",d:"Amerika",correct:"c"},
+        {q:"Apa ibu kota Jepang?",a:"Seoul",b:"Tokyo",c:"Beijing",d:"Bangkok",correct:"b"},
+        {q:"Apa mata uang Indonesia?",a:"Ringgit",b:"Baht",c:"Rupiah",d:"Yen",correct:"c"},
+        {q:"Apa mata uang Amerika Serikat?",a:"Euro",b:"Rupiah",c:"Peso",d:"Dollar",correct:"d"},
+        {q:"Apa bahasa utama di Indonesia?",a:"Indonesia",b:"Inggris",c:"Jepang",d:"Arab",correct:"a"},
+        {q:"Hewan khas Indonesia adalah?",a:"Kanguru",b:"Komodo",c:"Panda",d:"Beruang kutub",correct:"b"},
+        {q:"Apa benua terkecil di dunia?",a:"Asia",b:"Eropa",c:"Australia",d:"Afrika",correct:"c"},
+        {q:"Apa ibu kota Malaysia?",a:"Johor Bahru",b:"Kuala Lumpur",c:"Penang",d:"Sabah",correct:"b"},
+        {q:"Hewan besar di Afrika yang punya belalai adalah?",a:"Singa",b:"Gajah",c:"Harimau",d:"Kuda",correct:"b"},
+        {q:"Negara yang punya kanguru adalah?",a:"India",b:"Mesir",c:"China",d:"Australia",correct:"d"},
+        {q:"Hewan lucu dari China yang suka bambu?",a:"Kucing",b:"Kuda",c:"Ayam",d:"Panda",correct:"d"},
+        {q:"Benua tempat banyak es adalah?",a:"Asia",b:"Afrika",c:"Antartika",d:"Eropa",correct:"c"},
+        {q:"Negara yang terkenal dengan gurun pasir?",a:"Mesir",b:"Indonesia",c:"Jepang",d:"Korea",correct:"a"},
+        {q:"Negara yang punya kanguru?",a:"Australia",b:"India",c:"China",d:"Brazil",correct:"a"},
+        {q:"Hewan yang hidup di Kutub Selatan?",a:"Penguin",b:"Singa",c:"Kucing",d:"Kuda",correct:"a"},
+        {q:"Negara kita namanya?",a:"Malaysia",b:"Indonesia",c:"Thailand",d:"Vietnam",correct:"b"},
+        {q:"Hewan yang suka hidup di es dan warna putih?",a:"Singa",b:"Beruang kutub",c:"Gajah",d:"Kuda",correct:"b"},
+        {q:"Makanan khas Indonesia adalah?",a:"Pizza",b:"Burger",c:"Sushi",d:"Rendang",correct:"d"},
+        {q:"Makanan khas Jepang adalah?",a:"Sushi",b:"Nasi goreng",c:"Burger",d:"Pizza",correct:"a"},
+        {q:"Makanan khas Jepang selain sushi adalah?",a:"Ramen",b:"Burger",c:"Pizza",d:"Sate",correct:"a"},
+
+
+
         // tambahkan sampai 22
         ]
 
@@ -144,6 +163,9 @@ class gameplayScene1 extends Phaser.Scene {
         // 🔥 LOGIC MEWARNAI: "LIQUID FILL" (PASTI PENUH & SMOOTH) 🔥
         // ==================================================================
         const paintZone = (zone, stripesObj) => {
+                // 🔥 TAMBAHAN INI (WAJIB)
+            if (this.isAnimating) return;
+
             if (this.selectedColor === null) {
                 this.tweens.add({ targets: zone, x: zone.x + 5, duration: 50, yoyo: true, repeat: 3 });
                 return;
@@ -352,6 +374,9 @@ class gameplayScene1 extends Phaser.Scene {
         const btnHint = this.add.image(60, height - 60, 'btnHint')
         .setInteractive()
         .setScale(0.8);
+
+        // 🔥 TAMBAHKAN INI
+        this.addButtonEffect(btnHint);
 
         btnHint.on('pointerdown', () => {
         if (this.hintCount <= 0){
@@ -756,19 +781,37 @@ class gameplayScene1 extends Phaser.Scene {
     }
 
     showHintAnswer(){
-        let randomIndex = Phaser.Math.Between(0,this.flagAnswers.length-1);
-        let hint = this.flagAnswers[randomIndex];
 
-        alert("Petunjuk: " + hint.text);
+    // 🔥 ambil hint yang belum pernah dipakai
+    let availableHints = this.flagAnswers.filter((h,i)=>{
+        return !this.usedFlagHints.includes(i);
+    });
 
-        if(hint.top){
-            this.selectedColor = hint.top;
-            this.updateBrushColor(hint.top);
-        }
-
-        if(hint.bottom){
-            this.selectedColor = hint.bottom;
-            this.updateBrushColor(hint.bottom);
-        }
+    // 🔥 kalau habis → reset
+    if(availableHints.length === 0){
+        this.usedFlagHints = [];
+        availableHints = this.flagAnswers;
     }
+
+    // 🔥 ambil random dari yang tersedia
+    let randomIndex = Phaser.Math.Between(0, availableHints.length - 1);
+    let hint = availableHints[randomIndex];
+
+    // 🔥 cari index asli
+    let originalIndex = this.flagAnswers.indexOf(hint);
+    this.usedFlagHints.push(originalIndex);
+
+    // ===================== tampilkan =====================
+    alert("Petunjuk: " + hint.text);
+
+    if(hint.top){
+        this.selectedColor = hint.top;
+        this.updateBrushColor(hint.top);
+    }
+
+    if(hint.bottom){
+        this.selectedColor = hint.bottom;
+        this.updateBrushColor(hint.bottom);
+    }
+}
 }
