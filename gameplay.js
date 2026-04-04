@@ -30,6 +30,11 @@ class gameplayScene1 extends Phaser.Scene {
         this.load.image('btnYes','asset/btn_yes.png');
         this.load.image('btnNo','asset/btn_no.png');
 
+        this.load.image('quizBG','asset/quizBG.png');
+        this.load.image('optionBtn','asset/optionBtn.png');
+        this.load.image('kotak_win', 'asset/kotak_win.png');
+        this.load.image('btn_x', 'asset/btn_x.png');
+
         this.load.audio('suaraKuas', 'asset/suara_kuas.mp3');
         this.load.audio('pop', 'asset/pop.mp3');
         this.load.audio('soundMenang', 'asset/menang.mp3'); 
@@ -71,8 +76,8 @@ class gameplayScene1 extends Phaser.Scene {
         // ================= SISTEM HINT =================
         let hintData = localStorage.getItem('hintData');
         if (hintData === null) {
-            this.hintCount = 3;
-            localStorage.setItem('hintData', 3);
+            this.hintCount = 2;
+            localStorage.setItem('hintData', 2);
         } else {
             this.hintCount = parseInt(hintData);
         }
@@ -566,6 +571,20 @@ class gameplayScene1 extends Phaser.Scene {
 
         optA = createOption("A. "+data.a,height/2-20,"a"); optB = createOption("B. "+data.b,height/2+40,"b"); optC = createOption("C. "+data.c,height/2+100,"c"); optD = createOption("D. "+data.d,height/2+160,"d");
     }
+});
+
+        options.push({bg:btnBG,text:btnText});
+    };
+
+    // ================= 2 KOLOM =================
+    // baris 1
+    createOption("A. "+data.a, centerX - offsetX, startY, "a");
+    createOption("B. "+data.b, centerX + offsetX, startY, "b");
+
+    // baris 2
+    createOption("C. "+data.c, centerX - offsetX, startY + gapY, "c");
+    createOption("D. "+data.d, centerX + offsetX, startY + gapY, "d");
+}
 
     showHintAnswer(){
         let availableHints = this.flagAnswers.filter((h,i)=>{ return !this.usedFlagHints.includes(i); });
