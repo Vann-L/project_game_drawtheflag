@@ -30,6 +30,11 @@ class gameplayScene1 extends Phaser.Scene {
         this.load.image('btnYes','asset/btn_yes.png');
         this.load.image('btnNo','asset/btn_no.png');
 
+        this.load.image('quizBG','asset/quizBG.png');
+        this.load.image('optionBtn','asset/optionBtn.png');
+        this.load.image('kotak_win', 'asset/kotak_win.png');
+        this.load.image('btn_x', 'asset/btn_x.png');
+
         this.load.audio('suaraKuas', 'asset/suara_kuas.mp3');
         this.load.audio('pop', 'asset/pop.mp3');
         this.load.audio('soundMenang', 'asset/menang.mp3'); 
@@ -57,8 +62,8 @@ class gameplayScene1 extends Phaser.Scene {
         // ================= SISTEM HINT =================
         let hintData = localStorage.getItem('hintData');
         if (hintData === null) {
-            this.hintCount = 3;
-            localStorage.setItem('hintData', 3);
+            this.hintCount = 2;
+            localStorage.setItem('hintData', 2);
         } else {
             this.hintCount = parseInt(hintData);
         }
@@ -380,9 +385,9 @@ class gameplayScene1 extends Phaser.Scene {
 
         btnHint.on('pointerdown', () => {
         if (this.hintCount <= 0){
-                alert("Hint habis!");
-                return;
-            }
+    this.showHintEmpty();
+    return;
+}
             this.showHintConfirm();
         });
             
@@ -692,93 +697,130 @@ class gameplayScene1 extends Phaser.Scene {
     }
 
     showQuizHint(){
-        if(this.hintCount <= 0){
-            alert("Hint sudah habis!");
-            if(this.timerTween) this.timerTween.resume();
-            return;
-        }
+   if(this.hintCount <= 0){
+    this.showHintEmpty();
+    if(this.timerTween) this.timerTween.resume();
+    return;
+}
 
-        const {width,height} = this.scale;
+    const {width,height} = this.scale;
 
-        let availableQuestions = this.hintQuestions.filter((q,i)=>{
-            return !this.usedHintQuestions.includes(i);
-        });
+    let availableQuestions = this.hintQuestions.filter((q,i)=>{
+        return !this.usedHintQuestions.includes(i);
+    });
 
-        if(availableQuestions.length === 0){
-            alert("Semua soal hint sudah dipakai!");
-            return;
-        }
+    if(availableQuestions.length === 0){
+        alert("Semua soal hint sudah dipakai!");
+        return;
+    }
 
-        let randomIndex = Phaser.Math.Between(0,availableQuestions.length-1);
-        let data = availableQuestions[randomIndex];
+    let randomIndex = Phaser.Math.Between(0,availableQuestions.length-1);
+    let data = availableQuestions[randomIndex];
 
-        let originalIndex = this.hintQuestions.indexOf(data);
-        this.usedHintQuestions.push(originalIndex);
+    let originalIndex = this.hintQuestions.indexOf(data);
+    this.usedHintQuestions.push(originalIndex);
 
-        const bg = this.add.rectangle(width/2,height/2,width,height,0x000000)
+    // ================= BACKGROUND =================
+    const bg = this.add.rectangle(width/2,height/2,width,height,0x000000)
         .setAlpha(0.7)
         .setDepth(700)
         .setInteractive();
 
-        const box = this.add.rectangle(width/2,height/2,700,400,0xffffff)
+    // ================= BOX PNG =================
+    const box = this.add.image(width/2,height/2,'quizBG')
         .setDepth(701)
-        .setStrokeStyle(4,0x000000);
+        .setScale(0.6);
 
-        const question = this.add.text(width/2,height/2-120,data.q,{
-        fontSize:"28px",
-        color:"#000",
-        wordWrap:{width:600}
+    // ================= TEXT PERTANYAAN =================
+    const question = this.add.text(width/2 + -15,height/2-60,data.q,{
+        fontSize:"21px",
+        fontFamily:"Arial",
+        color:"#000000",
+        align:"center",
+        wordWrap:{width:500}
+    })
+    .setOrigin(0.5)
+    .setDepth(702);
+
+    let options = [];
+
+    const destroyAll = ()=>{
+        bg.destroy();
+        box.destroy();
+        question.destroy();
+        options.forEach(o=>{
+            o.bg.destroy();
+            o.text.destroy();
+        });
+    };
+
+    // ================= POSISI GRID =================
+    const centerX = width / 2 + -20;   // geser ke kanan
+const startY = height / 2 + 20;   // geser ke bawah
+
+    const offsetX = 110; // kiri kanan
+    const gapY = 70;     // atas bawah
+
+    // ================= FUNCTION BUTTON =================
+    const createOption = (text, x, y, key)=>{
+        let btnBG = this.add.image(x,y,'optionBtn')
+            .setDepth(702)
+            .setScale(0.08)
+            .setInteractive({ useHandCursor:true });
+
+        let btnText = this.add.text(x,y,text,{
+            fontSize:"19px",
+            fontFamily:"Arial",
+            color:"#000"
         })
         .setOrigin(0.5)
-        .setDepth(702);
+        .setDepth(703);
 
-        let optA,optB,optC,optD;
+        // hover effect
+        btnBG.on("pointerover",()=> btnBG.setScale(0.08));
+        btnBG.on("pointerout",()=> btnBG.setScale(0.08));
 
-        const destroyAll = ()=>{
-            bg.destroy();
-            box.destroy();
-            question.destroy();
-            optA.destroy();
-            optB.destroy();
-            optC.destroy();
-            optD.destroy();
-        };
+       btnBG.on("pointerdown",()=>{
+    this.hintCount--;
+    localStorage.setItem('hintData', this.hintCount);
 
-        const createOption = (text,y,key)=>{
-            let btn = this.add.text(width/2,y,text,{
-            fontSize:"26px",
-            backgroundColor:"#dddddd",
-            padding:{left:20,right:20,top:10,bottom:10}
-            })
-            .setOrigin(0.5)
-            .setInteractive()
-            .setDepth(702);
+    if(key === data.correct){
+        btnBG.setTint(0x00ff00);
 
-            btn.on("pointerdown",()=>{
-                this.hintCount--;
-                localStorage.setItem('hintData', this.hintCount);
+        this.time.delayedCall(300, ()=>{
+            destroyAll();
+            this.showHintAnswer();
+            if(this.timerTween) this.timerTween.resume();
+        });
 
-                if(key === data.correct){
-                    destroyAll();
-                    this.showHintAnswer();
-                    if(this.timerTween) this.timerTween.resume();
-                }else{
-                    alert("Jawaban salah! Sisa hint: " + this.hintCount);
-                    if(this.hintCount <= 0){
-                        destroyAll();
-                        if(this.timerTween) this.timerTween.resume();
-                        return;
-                    }
-                }
-            });
-            return btn;
-        };
+    }else{
+        // 🔴 SALAH → MERAH SEBENTAR
+        btnBG.setTint(0xff0000);
 
-        optA = createOption("A. "+data.a,height/2-20,"a");
-        optB = createOption("B. "+data.b,height/2+40,"b");
-        optC = createOption("C. "+data.c,height/2+100,"c");
-        optD = createOption("D. "+data.d,height/2+160,"d");
+        this.time.delayedCall(400, ()=>{
+            btnBG.clearTint(); // balik normal lagi
+
+            // kalau hint habis langsung keluar
+            if(this.hintCount <= 0){
+                destroyAll();
+                if(this.timerTween) this.timerTween.resume();
+            }
+        });
     }
+});
+
+        options.push({bg:btnBG,text:btnText});
+    };
+
+    // ================= 2 KOLOM =================
+    // baris 1
+    createOption("A. "+data.a, centerX - offsetX, startY, "a");
+    createOption("B. "+data.b, centerX + offsetX, startY, "b");
+
+    // baris 2
+    createOption("C. "+data.c, centerX - offsetX, startY + gapY, "c");
+    createOption("D. "+data.d, centerX + offsetX, startY + gapY, "d");
+}
 
     showHintAnswer(){
 
@@ -802,7 +844,49 @@ class gameplayScene1 extends Phaser.Scene {
     this.usedFlagHints.push(originalIndex);
 
     // ===================== tampilkan =====================
-    alert("Petunjuk: " + hint.text);
+   const { width, height } = this.scale;
+
+// background gelap
+const bg = this.add.rectangle(width/2, height/2, width, height, 0x000000)
+    .setAlpha(0.6)
+    .setDepth(800)
+    .setInteractive();
+
+// kotak kosong
+const box = this.add.image(width/2, height/2, 'kotak_win')
+    .setDepth(801)
+    .setScale(0.35);
+
+// teks jawaban
+const text = this.add.text(width/2, height/2, hint.text, {
+    fontSize: "26px",
+    fontFamily: "Arial",
+    color: "#000000",
+    align: "center",
+    wordWrap: { width: 400 }
+})
+.setOrigin(0.5)
+.setDepth(802);
+
+// 🔥 TOMBOL X (CLOSE)
+const btnClose = this.add.image(width/2 + 260, height/2 - 90, 'btn_x')
+    .setDepth(803)
+    .setScale(0.15)
+    .setInteractive({ useHandCursor: true });
+
+// efek tombol (optional tapi bagus)
+this.addButtonEffect(btnClose);
+
+// 🔥 FUNCTION CLOSE
+btnClose.on('pointerdown', () => {
+    bg.destroy();
+    box.destroy();
+    text.destroy();
+    btnClose.destroy();
+
+    // 🔥 LANJUTKAN TIMER LAGI
+    if (this.timerTween) this.timerTween.resume();
+});
 
     if(hint.top){
         this.selectedColor = hint.top;
@@ -814,4 +898,46 @@ class gameplayScene1 extends Phaser.Scene {
         this.updateBrushColor(hint.bottom);
     }
 }
+
+showHintEmpty(){
+    const { width, height } = this.scale;
+
+    // 🔥 background gelap
+    const bg = this.add.rectangle(width/2, height/2, width, height, 0x000000)
+        .setAlpha(0.6)
+        .setDepth(900)
+        .setInteractive();
+
+    // 🔥 kotak popup (pakai asset kamu)
+    const box = this.add.image(width/2, height/2, 'kotak_win')
+        .setDepth(901)
+        .setScale(0.35);
+
+    // 🔥 teks
+    const text = this.add.text(width/2, height/2, "HINT HABIS!", {
+        fontSize: "26px",
+        fontFamily: "Arial",
+        color: "#000000",
+        align: "center"
+    })
+    .setOrigin(0.5)
+    .setDepth(902);
+
+    // 🔥 tombol X
+    const btnClose = this.add.image(width/2 + 260, height/2 - 90, 'btn_x')
+        .setDepth(903)
+        .setScale(0.15)
+        .setInteractive({ useHandCursor: true });
+
+    this.addButtonEffect(btnClose);
+
+    // 🔥 close logic
+    btnClose.on('pointerdown', () => {
+        bg.destroy();
+        box.destroy();
+        text.destroy();
+        btnClose.destroy();
+    });
+}
+
 }
