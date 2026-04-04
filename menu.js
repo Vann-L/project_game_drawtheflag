@@ -220,6 +220,10 @@ class menuScene extends Phaser.Scene {
     });
 
     this.skipBtn.on('pointerdown', () => {
+
+// 🔥 TAMBAHKAN INI
+    this.sound.play('sfx_pop', { volume: 0.8 });
+
         this.tweens.add({
             targets: this.skipBtn,
             scale: 0.106,     // tekan
@@ -239,11 +243,15 @@ class menuScene extends Phaser.Scene {
     });
 
     btnYes.on('pointerdown', () => {
+      // 🔥 TAMBAHKAN INI
+    this.sound.play('sfx_pop', { volume: 0.8 });
         this.toggleConfirmDialog(false);
         this.playCinematicTransition();
     });
 
     btnNo.on('pointerdown', () => {
+      // 🔥 TAMBAHKAN INI
+    this.sound.play('sfx_pop', { volume: 0.8 });
         this.toggleConfirmDialog(false);
         this.introClickZone.setInteractive({ useHandCursor: true });
     });
