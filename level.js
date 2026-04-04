@@ -17,12 +17,21 @@ class levelScene extends Phaser.Scene {
     this.load.audio('pop', 'asset/pop.mp3');
   }
 
+  // 🔥 FUNGSI PEMBANTU CEK SFX 🔥
+  playGlobalSFX(key, config) {
+      if (localStorage.getItem('sfx_on') !== 'false') {
+          this.sound.play(key, config);
+      }
+  }
+
   create() {
     const { width, height } = this.scale;
 
-    // 🔥 LANJUTAN TRANSISI BGM: Ambil BGM yang sedang jalan (tapi posisinya lagi volume 0)
+    // 🔥 CEK STATUS MUSIK SEBELUM NAIKKAN VOLUME BGM 🔥
     let existingBgm = this.sound.get('bgm_menu');
-    if (existingBgm) {
+    let isMusicOn = localStorage.getItem('music_on') !== 'false';
+
+    if (existingBgm && isMusicOn) { // Cuma naikkan volume kalau musik ON
         this.tweens.add({
             targets: existingBgm,
             volume: 0.8,    // Balikin ke volume normal
@@ -46,41 +55,21 @@ class levelScene extends Phaser.Scene {
       .setScale(1)
       .setInteractive({ useHandCursor: true });
 
-    // hover → sedikit gelap
-    tombolback.on('pointerover', () => {
-      tombolback.setTint(0xeeeeee);
-    });
+    tombolback.on('pointerover', () => { tombolback.setTint(0xeeeeee); });
+    tombolback.on('pointerout', () => { tombolback.clearTint(); });
 
-    // keluar → normal lagi
-    tombolback.on('pointerout', () => {
-      tombolback.clearTint();
-    });
-
-    // klik
     tombolback.on('pointerdown', () => {
-      this.sound.play('pop');
+      this.playGlobalSFX('pop'); // 🔥 PAKAI FUNGSI CEK SFX
       tombolback.setTint(0xeeeeee);
 
-      this.tweens.add({
-          targets: tombolback,
-          scale: 0.115,
-          duration: 80,
-          yoyo: true,
-          ease: 'Quad.easeOut'
-      });
+      this.tweens.add({ targets: tombolback, scale: 0.115, duration: 80, yoyo: true, ease: 'Quad.easeOut' });
 
-     
-      localStorage.clear();
-      
       // Matikan BGM sepenuhnya kalau mau balik ke menu biar di menu mulai baru lagi
       // atau biarkan saja kalau mau lanjut terus
       this.scene.start('menu'); 
     });
 
-    // lepas klik
-    tombolback.on('pointerup', () => {
-      tombolback.setTint(0xdddddd);
-    });
+    tombolback.on('pointerup', () => { tombolback.setTint(0xdddddd); });
 
     // ======================= LOGIKA LEVEL =======================
 
@@ -89,33 +78,15 @@ class levelScene extends Phaser.Scene {
     // Ambil data level dari localStorage
     let levelData = JSON.parse(localStorage.getItem('levelData')) || this.createDefaultLevelData(TOTAL_LEVEL);
 
-    // Refresh data jika jumlah level berubah di kodingan
     if (Object.keys(levelData).length !== TOTAL_LEVEL) {
         levelData = this.createDefaultLevelData(TOTAL_LEVEL);
     }
 
-    // Posisi awal tombol level
     const levelPositions = [
-      { x: width * 0.06, y: height * 0.252 }, // level 1
-      { x: width * 0.28, y: height * 0.252 }, // level 2
-      { x: width * 0.50, y: height * 0.252 }, // level 3
-      { x: width * 0.72, y: height * 0.252 }, // level 4
-      { x: width * 0.945, y: height * 0.341 }, // level 5
-      { x: width * 0.84, y: height * 0.417 }, // level 6
-      { x: width * 0.62, y: height * 0.417 }, // level 7
-      { x: width * 0.40, y: height * 0.417 }, // level 8
-      { x: width * 0.16, y: height * 0.417 }, // level 9
-      { x: width * 0.055, y: height * 0.506 }, // level 10
-      { x: width * 0.28, y: height * 0.581 }, // level 11
-      { x: width * 0.50, y: height * 0.581 }, // level 12
-      { x: width * 0.72, y: height * 0.581 }, // level 13
-      { x: width * 0.945, y: height * 0.668 }, // level 14
-      { x: width * 0.84, y: height * 0.745 }, // level 15
-      { x: width * 0.62, y: height * 0.745 }, // level 16
-      { x: width * 0.40, y: height * 0.745 }, // level 17
-      { x: width * 0.16, y: height * 0.745 }, // level 18
-      { x: width * 0.055, y: height * 0.835 }, // level 19
-      { x: width * 0.28, y: height * 0.909 }, // level 20
+      { x: width * 0.06, y: height * 0.252 }, { x: width * 0.28, y: height * 0.252 }, { x: width * 0.50, y: height * 0.252 }, { x: width * 0.72, y: height * 0.252 }, { x: width * 0.945, y: height * 0.341 },
+      { x: width * 0.84, y: height * 0.417 }, { x: width * 0.62, y: height * 0.417 }, { x: width * 0.40, y: height * 0.417 }, { x: width * 0.16, y: height * 0.417 }, { x: width * 0.055, y: height * 0.506 },
+      { x: width * 0.28, y: height * 0.581 }, { x: width * 0.50, y: height * 0.581 }, { x: width * 0.72, y: height * 0.581 }, { x: width * 0.945, y: height * 0.668 }, { x: width * 0.84, y: height * 0.745 },
+      { x: width * 0.62, y: height * 0.745 }, { x: width * 0.40, y: height * 0.745 }, { x: width * 0.16, y: height * 0.745 }, { x: width * 0.055, y: height * 0.835 }, { x: width * 0.28, y: height * 0.909 }
     ];
 
     for (let i = 1; i <= TOTAL_LEVEL; i++) {
@@ -134,82 +105,34 @@ class levelScene extends Phaser.Scene {
   }
 
   createLevelButton(levelNumber, x, y, levelData) {
-    const status = levelData[levelNumber]; // 0=locked, 1=current, 2=completed
+    const status = levelData[levelNumber]; 
     let key;
 
-    // Mapping gambar completed tiap level
     const completedImages = {
-      1:  'level1', 
-      2:  'level2',
-      3:  'level3',
-      4:  'level4',
-      5:  'level5',
-      6:  'level6',
-      7:  'level7',
-      8:  'level8',
-      9:  'level9',
-      10: 'level10',
-      11: 'level11',
-      12: 'level12',
-      13: 'level13',
-      14: 'level14',
-      15: 'level15',
-      16: 'level16',
-      17: 'level17',
-      18: 'level18',
-      19: 'level19',
-      20: 'level20',
+      1: 'level1', 2: 'level2', 3: 'level3', 4: 'level4', 5: 'level5', 6: 'level6', 7: 'level7', 8: 'level8', 9: 'level9', 10: 'level10',
+      11: 'level11', 12: 'level12', 13: 'level13', 14: 'level14', 15: 'level15', 16: 'level16', 17: 'level17', 18: 'level18', 19: 'level19', 20: 'level20'
     };
 
     if (status === 0) key = 'levellock';
     if (status === 1) key = 'levelpijak';
-    if (status === 2) {
-      key = completedImages[levelNumber];
-    }
+    if (status === 2) { key = completedImages[levelNumber]; }
 
-    const btn = this.add.image(x, y, key)
-      .setScale(0.13)
-      .setDepth(10);
+    const btn = this.add.image(x, y, key).setScale(0.13).setDepth(10);
 
-    // Hanya level terbuka (1) atau selesai (2) yang bisa diklik untuk main ulang
     if (status === 1 || status === 2) {
       btn.setInteractive({ useHandCursor: true });
 
       btn.on('pointerdown', () => {
-        this.sound.play('pop', { volume: 0.7 });
+        this.playGlobalSFX('pop', { volume: 0.7 }); // 🔥 PAKAI FUNGSI CEK SFX
         const levelSceneMap = {
-          1:  'gameplay1',
-          2:  'gameplay2',
-          3:  'gameplay3',
-          4:  'gameplay4',
-          5:  'gameplay5',
-          6:  'gameplay6',
-          7:  'gameplay7',
-          8:  'gameplay8',
-          9:  'gameplay9',
-          10: 'gameplay10',
-          11: 'gameplay11',
-          12: 'gameplay12',
-          13: 'gameplay13',
-          14: 'gameplay14',
-          15: 'gameplay15',
-          16: 'gameplay16',
-          17: 'gameplay17',
-          18: 'gameplay18',
-          19: 'gameplay19',
-          20: 'gameplay20',
+          1: 'gameplay1', 2: 'gameplay2', 3: 'gameplay3', 4: 'gameplay4', 5: 'gameplay5', 6: 'gameplay6', 7: 'gameplay7', 8: 'gameplay8', 9: 'gameplay9', 10: 'gameplay10',
+          11: 'gameplay11', 12: 'gameplay12', 13: 'gameplay13', 14: 'gameplay14', 15: 'gameplay15', 16: 'gameplay16', 17: 'gameplay17', 18: 'gameplay18', 19: 'gameplay19', 20: 'gameplay20'
         };
-
         this.scene.start(levelSceneMap[levelNumber]);
       });
 
-      // Efek Hover
-      btn.on('pointerover', () => {
-        this.tweens.add({ targets: btn, scale: 0.14, duration: 100 });
-      });
-      btn.on('pointerout', () => {
-        this.tweens.add({ targets: btn, scale: 0.13, duration: 100 });
-      });
+      btn.on('pointerover', () => { this.tweens.add({ targets: btn, scale: 0.14, duration: 100 }); });
+      btn.on('pointerout', () => { this.tweens.add({ targets: btn, scale: 0.13, duration: 100 }); });
     }
   }
 }
