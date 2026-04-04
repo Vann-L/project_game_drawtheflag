@@ -168,8 +168,12 @@ class gameplayScene1 extends Phaser.Scene {
         // 🔥 LOGIC MEWARNAI: "LIQUID FILL" (PASTI PENUH & SMOOTH) 🔥
         // ==================================================================
         const paintZone = (zone, stripesObj) => {
-                // 🔥 TAMBAHAN INI (WAJIB)
-            if (this.isAnimating) return;
+                
+// 🔥 CEGAH JALAN SAAT GAME OVER
+    if (this.gameOver) return;
+
+    if (this.isAnimating) return;
+
 
             if (this.selectedColor === null) {
                 this.tweens.add({ targets: zone, x: zone.x + 5, duration: 50, yoyo: true, repeat: 3 });
@@ -537,6 +541,18 @@ class gameplayScene1 extends Phaser.Scene {
         // Cek supaya nggak dipanggil 2 kali
         if (this.gameOver) return; 
         this.gameOver = true;
+
+        // 🔥 STOP TIMER
+    if (this.timerTween) this.timerTween.stop();
+
+    // 🔥 STOP SEMUA TWEEN (INI KUNCI UTAMA)
+    this.tweens.killAll();
+
+    // 🔥 MATIKAN FLAG ANIMASI
+    this.isAnimating = false;
+
+    // 🔥 OPTIONAL: STOP SOUND KUAS JIKA MASIH MAIN
+    this.sound.stopByKey('suaraKuas');
         
         if (this.timerTween) this.timerTween.stop();
 
@@ -667,17 +683,23 @@ class gameplayScene1 extends Phaser.Scene {
 
         const box = this.add.image(width/2,height/2,'hintBG')
         .setDepth(601)
-        .setScale(0.49);
+        .setScale(0.49)
+        .setInteractive();;
 
         const btnYes = this.add.image(width/2-105,height/2+55,'btnYes')
         .setInteractive()
         .setDepth(602)
-        .setScale(0.092);
+        .setScale(0.092)
+        .setInteractive();;
 
         const btnNo = this.add.image(width/2+70,height/2+55,'btnNo')
-        .setInteractive()
         .setDepth(602)
-        .setScale(0.092);
+        .setScale(0.092)
+        .setInteractive();
+
+        // 🔥 TAMBAHKAN INI
+        this.addButtonEffect(btnYes);
+        this.addButtonEffect(btnNo);
 
         btnNo.on('pointerdown',()=>{
             bg.destroy();
@@ -756,7 +778,7 @@ class gameplayScene1 extends Phaser.Scene {
 
     // ================= POSISI GRID =================
     const centerX = width / 2 + -20;   // geser ke kanan
-const startY = height / 2 + 20;   // geser ke bawah
+    const startY = height / 2 + 20;   // geser ke bawah
 
     const offsetX = 110; // kiri kanan
     const gapY = 70;     // atas bawah
@@ -775,6 +797,10 @@ const startY = height / 2 + 20;   // geser ke bawah
         })
         .setOrigin(0.5)
         .setDepth(703);
+
+    // 🔥 TAMBAHKAN INI
+    this.addButtonEffect(btnBG);
+
 
         // hover effect
         btnBG.on("pointerover",()=> btnBG.setScale(0.08));
@@ -933,6 +959,8 @@ showHintEmpty(){
 
     // 🔥 close logic
     btnClose.on('pointerdown', () => {
+        // 🔥 TAMBAHKAN INI
+    this.sound.play('sfx_pop', { volume: 0.8 });
         bg.destroy();
         box.destroy();
         text.destroy();
