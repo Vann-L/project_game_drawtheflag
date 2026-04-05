@@ -348,7 +348,11 @@ class gameplayScene1 extends Phaser.Scene {
         this.addButtonEffect(btnHint);
 
         btnHint.on('pointerdown', () => {
-            if (this.hintCount <= 0){ alert("Hint habis!"); return; }
+            // 🔥 UBAH PANGGILAN HINT HABIS
+            if (this.hintCount <= 0){
+                this.showHintEmpty();
+                return;
+            }
             this.showHintConfirm();
         });
     } 
@@ -510,93 +514,258 @@ class gameplayScene1 extends Phaser.Scene {
         home.on('pointerdown', () => { this.scene.start('level'); });
     }
 
+    // ==========================================
+    // 🔥 BAGIAN HINT YANG SUDAH DI-UPDATE 🔥
+    // ==========================================
+
     showHintConfirm(){
         const {width,height} = this.scale;
         if(this.timerTween) this.timerTween.pause();
 
         const bg = this.add.rectangle(width/2,height/2,width,height,0x000000).setAlpha(0.6).setDepth(600).setInteractive();
-        const box = this.add.image(width/2,height/2,'hintBG').setDepth(601).setScale(0.49);
+        const box = this.add.image(width/2,height/2,'hintBG').setDepth(601).setScale(0.49).setInteractive();
         const btnYes = this.add.image(width/2-105,height/2+55,'btnYes').setInteractive().setDepth(602).setScale(0.092);
         const btnNo = this.add.image(width/2+70,height/2+55,'btnNo').setInteractive().setDepth(602).setScale(0.092);
 
+        this.addButtonEffect(btnYes);
+        this.addButtonEffect(btnNo);
+
         btnNo.on('pointerdown',()=>{
-            this.playGlobalSFX('pop'); // 🔥 PAKAI FUNGSI CEK SFX
+            this.playGlobalSFX('pop'); 
             bg.destroy(); box.destroy(); btnYes.destroy(); btnNo.destroy();
             if(this.timerTween) this.timerTween.resume();
         });
 
         btnYes.on('pointerdown',()=>{
-            this.playGlobalSFX('pop'); // 🔥 PAKAI FUNGSI CEK SFX
+            this.playGlobalSFX('pop'); 
             bg.destroy(); box.destroy(); btnYes.destroy(); btnNo.destroy();
             this.showQuizHint();
         });
     }
 
     showQuizHint(){
-        if(this.hintCount <= 0){ alert("Hint sudah habis!"); if(this.timerTween) this.timerTween.resume(); return; }
+        if(this.hintCount <= 0){
+            this.showHintEmpty();
+            if(this.timerTween) this.timerTween.resume();
+            return;
+        }
 
         const {width,height} = this.scale;
-        let availableQuestions = this.hintQuestions.filter((q,i)=>{ return !this.usedHintQuestions.includes(i); });
-        if(availableQuestions.length === 0){ alert("Semua soal hint sudah dipakai!"); return; }
+
+        let availableQuestions = this.hintQuestions.filter((q,i)=>{
+            return !this.usedHintQuestions.includes(i);
+        });
+
+        if(availableQuestions.length === 0){
+            alert("Semua soal hint sudah dipakai!");
+            return;
+        }
 
         let randomIndex = Phaser.Math.Between(0,availableQuestions.length-1);
         let data = availableQuestions[randomIndex];
+
         let originalIndex = this.hintQuestions.indexOf(data);
         this.usedHintQuestions.push(originalIndex);
 
-        const bg = this.add.rectangle(width/2,height/2,width,height,0x000000).setAlpha(0.7).setDepth(700).setInteractive();
-        const box = this.add.rectangle(width/2,height/2,700,400,0xffffff).setDepth(701).setStrokeStyle(4,0x000000);
-        const question = this.add.text(width/2,height/2-120,data.q,{ fontSize:"28px", color:"#000", wordWrap:{width:600} }).setOrigin(0.5).setDepth(702);
+        // ================= BACKGROUND =================
+        const bg = this.add.rectangle(width/2,height/2,width,height,0x000000)
+            .setAlpha(0.7)
+            .setDepth(700)
+            .setInteractive();
 
-        let optA,optB,optC,optD;
-        const destroyAll = ()=>{ bg.destroy(); box.destroy(); question.destroy(); optA.destroy(); optB.destroy(); optC.destroy(); optD.destroy(); };
+        // ================= BOX PNG =================
+        const box = this.add.image(width/2,height/2,'quizBG')
+            .setDepth(701)
+            .setScale(0.6);
 
-        const createOption = (text,y,key)=>{
-            let btn = this.add.text(width/2,y,text,{ fontSize:"26px", backgroundColor:"#dddddd", padding:{left:20,right:20,top:10,bottom:10} }).setOrigin(0.5).setInteractive().setDepth(702);
+        // ================= TEXT PERTANYAAN =================
+        const question = this.add.text(width/2 + -15,height/2-60,data.q,{
+            fontSize:"21px",
+            fontFamily:"Arial",
+            color:"#000000",
+            align:"center",
+            wordWrap:{width:500}
+        })
+        .setOrigin(0.5)
+        .setDepth(702);
 
-            btn.on("pointerdown",()=>{
-                this.playGlobalSFX('pop'); // 🔥 PAKAI FUNGSI CEK SFX
-                this.hintCount--; localStorage.setItem('hintData', this.hintCount);
+        let options = [];
 
-                if(key === data.correct){
-                    destroyAll(); this.showHintAnswer();
-                    if(this.timerTween) this.timerTween.resume();
-                }else{
-                    alert("Jawaban salah! Sisa hint: " + this.hintCount);
-                    if(this.hintCount <= 0){ destroyAll(); if(this.timerTween) this.timerTween.resume(); return; }
-                }
+        const destroyAll = ()=>{
+            bg.destroy();
+            box.destroy();
+            question.destroy();
+            options.forEach(o=>{
+                o.bg.destroy();
+                o.text.destroy();
             });
-            return btn;
         };
 
-        optA = createOption("A. "+data.a,height/2-20,"a"); optB = createOption("B. "+data.b,height/2+40,"b"); optC = createOption("C. "+data.c,height/2+100,"c"); optD = createOption("D. "+data.d,height/2+160,"d");
+        // ================= POSISI GRID =================
+        const centerX = width / 2 + -20;   
+        const startY = height / 2 + 20;   
+        const offsetX = 110; 
+        const gapY = 70;     
+
+        // ================= FUNCTION BUTTON =================
+        const createOption = (text, x, y, key)=>{
+            let btnBG = this.add.image(x,y,'optionBtn')
+                .setDepth(702)
+                .setScale(0.08)
+                .setInteractive({ useHandCursor:true });
+
+            let btnText = this.add.text(x,y,text,{
+                fontSize:"19px",
+                fontFamily:"Arial",
+                color:"#000"
+            })
+            .setOrigin(0.5)
+            .setDepth(703);
+
+            this.addButtonEffect(btnBG);
+
+            btnBG.on("pointerover",()=> btnBG.setScale(0.08));
+            btnBG.on("pointerout",()=> btnBG.setScale(0.08));
+
+            btnBG.on("pointerdown",()=>{
+                this.playGlobalSFX('pop'); 
+                
+                this.hintCount--;
+                localStorage.setItem('hintData', this.hintCount);
+
+                if(key === data.correct){
+                    btnBG.setTint(0x00ff00);
+
+                    this.time.delayedCall(300, ()=>{
+                        destroyAll();
+                        this.showHintAnswer();
+                    });
+
+                }else{
+                    btnBG.setTint(0xff0000);
+
+                    this.time.delayedCall(400, ()=>{
+                        btnBG.clearTint(); 
+
+                        if(this.hintCount <= 0){
+                            destroyAll();
+                            if(this.timerTween) this.timerTween.resume();
+                        }
+                    });
+                }
+            });
+
+            options.push({bg:btnBG,text:btnText});
+        };
+
+        // ================= 2 KOLOM =================
+        createOption("A. "+data.a, centerX - offsetX, startY, "a");
+        createOption("B. "+data.b, centerX + offsetX, startY, "b");
+        createOption("C. "+data.c, centerX - offsetX, startY + gapY, "c");
+        createOption("D. "+data.d, centerX + offsetX, startY + gapY, "d");
     }
-});
-
-        options.push({bg:btnBG,text:btnText});
-    };
-
-    // ================= 2 KOLOM =================
-    // baris 1
-    createOption("A. "+data.a, centerX - offsetX, startY, "a");
-    createOption("B. "+data.b, centerX + offsetX, startY, "b");
-
-    // baris 2
-    createOption("C. "+data.c, centerX - offsetX, startY + gapY, "c");
-    createOption("D. "+data.d, centerX + offsetX, startY + gapY, "d");
-}
 
     showHintAnswer(){
-        let availableHints = this.flagAnswers.filter((h,i)=>{ return !this.usedFlagHints.includes(i); });
-        if(availableHints.length === 0){ this.usedFlagHints = []; availableHints = this.flagAnswers; }
+        if (this.timerTween) this.timerTween.pause();
+
+        let availableHints = this.flagAnswers.filter((h,i)=>{
+            return !this.usedFlagHints.includes(i);
+        });
+
+        if(availableHints.length === 0){
+            this.usedFlagHints = [];
+            availableHints = this.flagAnswers;
+        }
 
         let randomIndex = Phaser.Math.Between(0, availableHints.length - 1);
         let hint = availableHints[randomIndex];
+
         let originalIndex = this.flagAnswers.indexOf(hint);
         this.usedFlagHints.push(originalIndex);
 
-        alert("Petunjuk: " + hint.text);
-        if(hint.top){ this.selectedColor = hint.top; this.updateBrushColor(hint.top); }
-        if(hint.bottom){ this.selectedColor = hint.bottom; this.updateBrushColor(hint.bottom); }
+        const { width, height } = this.scale;
+
+        const bg = this.add.rectangle(width/2, height/2, width, height, 0x000000)
+            .setAlpha(0.6)
+            .setDepth(800)
+            .setInteractive();
+
+        const box = this.add.image(width/2, height/2, 'kotak_win')
+            .setDepth(801)
+            .setScale(0.35);
+
+        const text = this.add.text(width/2, height/2, hint.text, {
+            fontSize: "26px",
+            fontFamily: "Arial",
+            color: "#000000",
+            align: "center",
+            wordWrap: { width: 400 }
+        })
+        .setOrigin(0.5)
+        .setDepth(802);
+
+        const btnClose = this.add.image(width/2 + 260, height/2 - 90, 'btn_x')
+            .setDepth(803)
+            .setScale(0.15)
+            .setInteractive({ useHandCursor: true });
+
+        this.addButtonEffect(btnClose);
+
+        btnClose.on('pointerdown', () => {
+            this.playGlobalSFX('pop'); 
+            bg.destroy();
+            box.destroy();
+            text.destroy();
+            btnClose.destroy();
+
+            if (this.timerTween) this.timerTween.resume();
+        });
+
+        if(hint.top){
+            this.selectedColor = hint.top;
+            this.updateBrushColor(hint.top);
+        }
+
+        if(hint.bottom){
+            this.selectedColor = hint.bottom;
+            this.updateBrushColor(hint.bottom);
+        }
+    }
+
+    showHintEmpty(){
+        const { width, height } = this.scale;
+
+        const bg = this.add.rectangle(width/2, height/2, width, height, 0x000000)
+            .setAlpha(0.6)
+            .setDepth(900)
+            .setInteractive();
+
+        const box = this.add.image(width/2, height/2, 'kotak_win')
+            .setDepth(901)
+            .setScale(0.35);
+
+        const text = this.add.text(width/2, height/2, "HINT HABIS!", {
+            fontSize: "26px",
+            fontFamily: "Arial",
+            color: "#000000",
+            align: "center"
+        })
+        .setOrigin(0.5)
+        .setDepth(902);
+
+        const btnClose = this.add.image(width/2 + 260, height/2 - 90, 'btn_x')
+            .setDepth(903)
+            .setScale(0.15)
+            .setInteractive({ useHandCursor: true });
+
+        this.addButtonEffect(btnClose);
+
+        btnClose.on('pointerdown', () => {
+            this.playGlobalSFX('pop'); 
+            bg.destroy();
+            box.destroy();
+            text.destroy();
+            btnClose.destroy();
+        });
     }
 }
