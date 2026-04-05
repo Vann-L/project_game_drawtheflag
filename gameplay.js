@@ -532,7 +532,7 @@ class gameplayScene1 extends Phaser.Scene {
         });
     }
 
-  showQuizHint(){
+ showQuizHint(){
         if(this.hintCount <= 0){ alert("Hint sudah habis!"); if(this.timerTween) this.timerTween.resume(); return; }
 
         const {width,height} = this.scale;
