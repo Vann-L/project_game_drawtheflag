@@ -1,15 +1,18 @@
-class gameplayScene1 extends Phaser.Scene {
+class gameplayScene10 extends Phaser.Scene {
     constructor() {
-        super('gameplay1');
+        super('gameplay10');
     }
 
     preload() {
-        // MUAT ASET: Masukin semua gambar dan suara ke memori
         this.load.image('bgBoard', 'asset/Gameplay.png'); 
         this.load.image('btnBack', 'asset/tombolback.png');
         this.load.image('btnHint', 'asset/petunjuk.png'); 
+        
+        // PALET HUNGARIA: Merah, Putih, Hijau
         this.load.image('paletMerah', 'asset/paletmerah.png'); 
         this.load.image('paletPutih', 'asset/paletputih.png');
+        this.load.image('paletHijau', 'asset/palethijau.png'); // Pastiin ada aset ini ya bang!
+
         this.load.image('bgKuas', 'asset/penampungkuas.png');
         this.load.image('gagangKuas', 'asset/gagang_kuas.png'); 
         this.load.image('buluKuas', 'asset/bulu_kuas.png');
@@ -19,7 +22,9 @@ class gameplayScene1 extends Phaser.Scene {
         this.load.image('btnHome', 'asset/home.png');
         this.load.image('btnReplay', 'asset/ulang.png');
         this.load.image('btnNext', 'asset/next.png');
-        this.load.image('flagwin_lvl1', 'asset/flagwin_lvl1.png');
+        
+        // ASET BENDERA MENANG
+        this.load.image('flagwin_lvl10', 'asset/flagwin_lvl10.png');
 
         this.load.image('loseText', 'asset/tulisan_kalah.png');
         this.load.image('iconX', 'asset/x.png');
@@ -29,7 +34,6 @@ class gameplayScene1 extends Phaser.Scene {
         this.load.image('hintBG','asset/popuphint.png');
         this.load.image('btnYes','asset/btn_yes.png');
         this.load.image('btnNo','asset/btn_no.png');
-
         this.load.image('quizBG','asset/quizBG.png');
         this.load.image('optionBtn','asset/optionBtn.png');
         this.load.image('kotak_win', 'asset/kotak_win.png');
@@ -42,8 +46,6 @@ class gameplayScene1 extends Phaser.Scene {
         this.load.audio('sfxTicking', 'asset/clock_ticking.mp3');
     }
 
-    // FUNGSI PEMBANTU CEK SFX
-    // Biar gak nulis pengecekan sfx_on berulang-ulang
     playGlobalSFX(key, config) {
         if (localStorage.getItem('sfx_on') !== 'false') {
             this.sound.play(key, config);
@@ -51,82 +53,53 @@ class gameplayScene1 extends Phaser.Scene {
     }
 
     create() {
-        // BGM SETUP: Ngatur musik latar sesuai settingan player
         let globalBgm = this.sound.get('bgm_menu');
         let isMusicOn = localStorage.getItem('music_on') !== 'false';
-        
         if (globalBgm) {
             this.tweens.killTweensOf(globalBgm); 
-            
-            if (isMusicOn) {
-                globalBgm.setVolume(1);
-            } else {
-                globalBgm.setVolume(0);
-            }
+            if (isMusicOn) globalBgm.setVolume(1);
+            else globalBgm.setVolume(0);
         }
 
-        // RESET STATE
         this.gameOver = false; 
         this.usedHintQuestions = [];
-        this.usedFlagHints = []; // tracking hint yang sudah dipakai
+        this.usedFlagHints = []; 
 
-        // JAWABAN BENAR UNTUK BENDERA INI
+        // JAWABAN BENAR HUNGARIA (Merah Atas, Putih Tengah, Hijau Bawah)
         this.flagAnswers = [
-            { text:"MERAH DI BAGIAN ATAS", top:0xD9252B },
-            { text:"PUTIH DI BAGIAN BAWAH", bottom:0xFFFFFF }
+            { text:"MERAH DI ATAS", top: 0xD9252B },
+            { text:"PUTIH DI TENGAH", mid: 0xFFFFFF },
+            { text:"HIJAU DI BAWAH", bottom: 0x436F4D } // Kode Hex warna Hijau Hungaria
         ];
 
-        // SISTEM HINT: Ambil data hint dari local storage
         let hintData = localStorage.getItem('hintData');
-        if (hintData === null) {
-            this.hintCount = 2;
-            localStorage.setItem('hintData', 2);
-        } else {
-            this.hintCount = parseInt(hintData);
-        }
+        this.hintCount = hintData === null ? 2 : parseInt(hintData);
+        if (hintData === null) localStorage.setItem('hintData', 2);
 
-        // BANK SOAL
+        // BANK SOAL HUNGARIA
         this.hintQuestions = [
-            {q:"Apa ibu kota Indonesia?",a:"Bandung",b:"Jakarta",c:"Surabaya",d:"Medan",correct:"b"},
-            {q:"Indonesia terletak di benua apa?",a:"Asia",b:"Eropa",c:"Afrika",d:"Australia",correct:"a"},
-            {q:"Apa benua terbesar di dunia?",a:"Afrika",b:"Eropa",c:"Asia",d:"Amerika",correct:"c"},
-            {q:"Apa ibu kota Jepang?",a:"Seoul",b:"Tokyo",c:"Beijing",d:"Bangkok",correct:"b"},
-            {q:"Apa mata uang Indonesia?",a:"Ringgit",b:"Baht",c:"Rupiah",d:"Yen",correct:"c"},
-            {q:"Apa mata uang Amerika Serikat?",a:"Euro",b:"Rupiah",c:"Peso",d:"Dollar",correct:"d"},
-            {q:"Apa bahasa utama di Indonesia?",a:"Indonesia",b:"Inggris",c:"Jepang",d:"Arab",correct:"a"},
-            {q:"Hewan khas Indonesia adalah?",a:"Kanguru",b:"Komodo",c:"Panda",d:"Beruang kutub",correct:"b"},
-            {q:"Apa benua terkecil di dunia?",a:"Asia",b:"Eropa",c:"Australia",d:"Afrika",correct:"c"},
-            {q:"Apa ibu kota Malaysia?",a:"Johor Bahru",b:"Kuala Lumpur",c:"Penang",d:"Sabah",correct:"b"},
-            {q:"Hewan besar di Afrika yang punya belalai adalah?",a:"Singa",b:"Gajah",c:"Harimau",d:"Kuda",correct:"b"},
-            {q:"Negara yang punya kanguru adalah?",a:"India",b:"Mesir",c:"China",d:"Australia",correct:"d"},
-            {q:"Hewan lucu dari China yang suka bambu?",a:"Kucing",b:"Kuda",c:"Ayam",d:"Panda",correct:"d"},
-            {q:"Benua tempat banyak es adalah?",a:"Asia",b:"Afrika",c:"Antartika",d:"Eropa",correct:"c"},
-            {q:"Negara yang terkenal dengan gurun pasir?",a:"Mesir",b:"Indonesia",c:"Jepang",d:"Korea",correct:"a"},
-            {q:"Negara yang punya kanguru?",a:"Australia",b:"India",c:"China",d:"Brazil",correct:"a"},
-            {q:"Hewan yang hidup di Kutub Selatan?",a:"Penguin",b:"Singa",c:"Kucing",d:"Kuda",correct:"a"},
-            {q:"Negara kita namanya?",a:"Malaysia",b:"Indonesia",c:"Thailand",d:"Vietnam",correct:"b"},
-            {q:"Hewan yang suka hidup di es dan warna putih?",a:"Singa",b:"Beruang kutub",c:"Gajah",d:"Kuda",correct:"b"},
-            {q:"Makanan khas Indonesia adalah?",a:"Pizza",b:"Burger",c:"Sushi",d:"Rendang",correct:"d"},
-            {q:"Makanan khas Jepang adalah?",a:"Sushi",b:"Nasi goreng",c:"Burger",d:"Pizza",correct:"a"},
-            {q:"Makanan khas Jepang selain sushi adalah?",a:"Ramen",b:"Burger",c:"Pizza",d:"Sate",correct:"a"}
+            {q:"Apa ibu kota negara Hungaria?",a:"Wina",b:"Budapest",c:"Praha",d:"Warsawa",correct:"b"},
+            {q:"Hungaria terletak di benua apa?",a:"Asia",b:"Amerika",c:"Eropa",d:"Afrika",correct:"c"},
+            {q:"Sungai terkenal yang mengalir melewati Budapest adalah?",a:"Sungai Nil",b:"Sungai Amazon",c:"Sungai Thames",d:"Sungai Donau (Danube)",correct:"d"},
+            {q:"Makanan sup daging tradisional khas Hungaria adalah?",a:"Goulash",b:"Rendang",c:"Tom Yum",d:"Kimchi",correct:"a"},
+            {q:"Rubik's Cube (Kubus Rubik) diciptakan oleh orang dari negara mana?",a:"Jepang",b:"Hungaria",c:"Amerika Serikat",d:"Inggris",correct:"b"}
         ];
 
         const { width, height } = this.scale;
-
-        // PASANG BACKGROUND
         this.add.image(width / 2, height / 2, 'bgBoard').setDisplaySize(width, height);
 
-        // PENGATURAN POSISI & UKURAN BENDERA
         const boardX = width / 2.04; 
         const boardY = height / 2 + 13; 
         const flagW = 512; 
         const flagH = 306; 
-        const halfHeight = flagH / 2;
+        
+        // TINGGI MASING-MASING BLOK (Horizontal)
+        const stripeH = flagH / 3; 
 
         this.selectedColor = null; 
         this.isAnimating = false; 
 
-        // FUNGSI ARSIRAN: Efek garis miring di area yang belum diwarnai
+        // FUNGSI ARSIRAN YANG RAPI
         const createStripes = (x, y, w, h) => {
             const graphics = this.add.graphics();
             graphics.lineStyle(2, 0xAAAAAA, 0.5); 
@@ -139,37 +112,47 @@ class gameplayScene1 extends Phaser.Scene {
             const maskShape = this.make.graphics();
             maskShape.fillStyle(0xffffff);
             maskShape.fillRect(x - w/2, y - h/2, w, h);
-            const mask = maskShape.createGeometryMask();
-            graphics.setMask(mask);
+            graphics.setMask(maskShape.createGeometryMask());
             return graphics;
         };
 
-        const topY = boardY - (halfHeight / 2);
-        const stripesTop = createStripes(boardX, topY, flagW, halfHeight);
-        const zoneTop = this.add.rectangle(boardX, topY, flagW, halfHeight, 0xFFFFFF)
-            .setInteractive({ useHandCursor: true }).setAlpha(0.01); 
+        // ================= PENYUSUNAN LAYER BENDERA HUNGARIA ================= //
 
-        const bottomY = boardY + (halfHeight / 2);
-        const stripesBottom = createStripes(boardX, bottomY, flagW, halfHeight);
-        const zoneBottom = this.add.rectangle(boardX, bottomY, flagW, halfHeight, 0xFFFFFF)
-            .setInteractive({ useHandCursor: true }).setAlpha(0.01);
+        // ATAS (Merah)
+        const topY = boardY - stripeH;
+        const stripesTop = createStripes(boardX, topY, flagW, stripeH).setDepth(11);
+        const zoneTop = this.add.rectangle(boardX, topY, flagW, stripeH, 0xFFFFFF)
+            .setInteractive({ useHandCursor: true }).setAlpha(0.01).setDepth(10); 
 
-        this.add.rectangle(boardX, boardY, flagW, 3, 0x000000).setDepth(20);
+        // TENGAH (Putih)
+        const midY = boardY;
+        const stripesMid = createStripes(boardX, midY, flagW, stripeH).setDepth(11);
+        const zoneMid = this.add.rectangle(boardX, midY, flagW, stripeH, 0xFFFFFF)
+            .setInteractive({ useHandCursor: true }).setAlpha(0.01).setDepth(10); 
+
+        // BAWAH (Hijau)
+        const bottomY = boardY + stripeH;
+        const stripesBottom = createStripes(boardX, bottomY, flagW, stripeH).setDepth(11);
+        const zoneBottom = this.add.rectangle(boardX, bottomY, flagW, stripeH, 0xFFFFFF)
+            .setInteractive({ useHandCursor: true }).setAlpha(0.01).setDepth(10); 
+
+        // OUTLINE & GARIS PEMISAH HORIZONTAL
+        // Garis pemisah 1 (atas-tengah)
+        this.add.rectangle(boardX, boardY - stripeH/2, flagW, 3, 0x000000).setDepth(20);
+        // Garis pemisah 2 (tengah-bawah)
+        this.add.rectangle(boardX, boardY + stripeH/2, flagW, 3, 0x000000).setDepth(20);
+        // Garis bingkai luar
         this.add.rectangle(boardX, boardY, flagW, flagH).setStrokeStyle(3, 0x000000).setDepth(20);
 
         this.add.image(width - 185, height - 95, 'bgKuas').setScale(0.7);
         const gagang = this.add.image(0, 0, 'gagangKuas');
         this.bulu = this.add.image(0, 0, 'buluKuas'); 
+        this.brushContainer = this.add.container(width - 185, height - 100, [gagang, this.bulu]).setScale(0.2).setDepth(30);
 
-        this.brushContainer = this.add.container(width - 185, height - 100, [gagang, this.bulu])
-            .setScale(0.2).setDepth(30);
+        // LOGIKA MEWARNAI 
+        const paintZone = (zone, stripesToDestroy = null) => {
+            if (this.gameOver || this.isAnimating) return;
 
-        // LOGIC MEWARNAI KETIKA AREA DIKLIK
-        const paintZone = (zone, stripesObj) => {
-            if (this.gameOver) return;
-            if (this.isAnimating) return;
-
-            // Kalau belum pilih warna, kotaknya getar aja
             if (this.selectedColor === null) {
                 this.tweens.add({ targets: zone, x: zone.x + 5, duration: 50, yoyo: true, repeat: 3 });
                 return;
@@ -182,114 +165,101 @@ class gameplayScene1 extends Phaser.Scene {
             this.isAnimating = true; 
 
             const paintColor = this.selectedColor; 
-            const paintGraphics = this.add.graphics().setDepth(5);
+            const paintGraphics = this.add.graphics().setDepth(15);
             
             const maskShapeLocal = this.make.graphics();
             maskShapeLocal.fillStyle(0xffffff);
             maskShapeLocal.fillRect(zone.x - zone.width/2, zone.y - zone.height/2, zone.width, zone.height);
-            const maskLocal = maskShapeLocal.createGeometryMask();
-            paintGraphics.setMask(maskLocal);
+            paintGraphics.setMask(maskShapeLocal.createGeometryMask());
 
-            const startX = zone.x - zone.width / 2; 
-            const startY = zone.y;                
+            const startX = zone.x - zone.width / 2;
+            const startY = zone.y;
             const zoneW = zone.width;
             const zoneH = zone.height;
 
-            // Animasi kuas gerak ke area yang diklik
             this.tweens.add({
-                targets: this.brushContainer, x: startX, y: startY, angle: -20, duration: 400, ease: 'Power2',
+                targets: this.brushContainer, x: startX + 50, y: startY, angle: -20, duration: 400, ease: 'Power2',
                 onComplete: () => { startPainting(); }
             });
 
             const startPainting = () => {
                 let sfx = this.sound.add('suaraKuas', { volume: 5.0 });
-                // CEK MEMORI UNTUK SUARA KUAS
-                if (localStorage.getItem('sfx_on') !== 'false') {
-                    sfx.play();
-                }
+                if (localStorage.getItem('sfx_on') !== 'false') sfx.play();
 
                 const animData = { progress: 0 }; 
 
-                // Animasi kuas maju mundur ngisi warna
                 this.tweens.add({
                     targets: animData, progress: 1, duration: 1000, ease: 'Linear', 
-                    
                     onUpdate: () => {
                         paintGraphics.clear();
                         paintGraphics.fillStyle(paintColor, 1);
-
                         const currentX = startX + (animData.progress * zoneW);
                         const wobble = Math.sin(animData.progress * 15) * 10;
                         const currentY = startY + wobble;
-
                         paintGraphics.fillRect(startX, startY - zoneH/2 - 10, (currentX - startX), zoneH + 20);
                         paintGraphics.fillCircle(currentX, currentY, zoneH / 2 + 10);
-
                         this.brushContainer.x = currentX + 30;
                         this.brushContainer.y = currentY - 40;
                         this.brushContainer.setAngle(-20 + Math.cos(animData.progress * 20) * 10);
                     },
-
                     onComplete: () => {
                         sfx.stop();
-
                         this.tweens.add({ targets: this.brushContainer, x: width - 185, y: height - 100, angle: 0, duration: 500, ease: 'Back.out' });
 
-                        if (stripesObj.active) stripesObj.destroy();
+                        if (stripesToDestroy && stripesToDestroy.active) stripesToDestroy.destroy();
                         
-                        zone.setFillStyle(paintColor);
+                        zone.setFillStyle(paintColor); 
                         zone.setAlpha(1);
                         
                         paintGraphics.destroy();
-                        maskShapeLocal.destroy();
-
                         zone.setData('colorCode', paintColor);
                         zone.setData('isPainting', false);
                         this.isAnimating = false; 
 
-                        this.checkWinCondition(zoneTop, zoneBottom);
+                        this.checkWinCondition(zoneTop, zoneMid, zoneBottom);
                     }
                 });
             };
         };
 
-        zoneTop.on('pointerdown', () => paintZone(zoneTop, stripesTop));
-        zoneBottom.on('pointerdown', () => paintZone(zoneBottom, stripesBottom));
+        // EVENT KLIK
+        zoneTop.on('pointerdown', () => { paintZone(zoneTop, stripesTop); });
+        zoneMid.on('pointerdown', () => { paintZone(zoneMid, stripesMid); });
+        zoneBottom.on('pointerdown', () => { paintZone(zoneBottom, stripesBottom); });
 
-        // UI ELEMENTS - TOMBOL BACK
-        const tombolback = this.add.image(width * 0.055, height * 0.080, 'tombolback')
-            .setScale(1).setInteractive({ useHandCursor: true });
-
-        tombolback.on('pointerover', () => { tombolback.setTint(0xeeeeee); });
-        tombolback.on('pointerout', () => { tombolback.clearTint(); });
+        // TOMBOL BACK
+        const tombolback = this.add.image(width * 0.055, height * 0.080, 'tombolback').setScale(1).setInteractive({ useHandCursor: true });
         tombolback.on('pointerdown', () => {
             this.playGlobalSFX('pop'); 
-            tombolback.setTint(0xeeeeee);
-            this.tweens.add({ targets: tombolback, scale: 0.115, duration: 80, yoyo: true, ease: 'Quad.easeOut' });
-            this.scene.start('level'); 
+            this.tweens.add({ targets: tombolback, scale: 0.115, duration: 80, yoyo: true, onComplete: () => this.scene.start('level') });
         });
-        tombolback.on('pointerup', () => { tombolback.setTint(0xdddddd); });
 
-        // PALET WARNA MERAH & PUTIH
-        const pMerah = this.add.image(width - 90, height/1.470 - 10, 'paletMerah').setInteractive().setScale(0.8);
+        // PALET WARNA HUNGARIA (Merah, Putih, Hijau)
+        const pMerah = this.add.image(width - 90, height/2.1, 'paletMerah').setInteractive().setScale(0.8);
         pMerah.on('pointerdown', () => {
             if (this.gameOver || this.isAnimating) return; 
             this.playGlobalSFX('pop', { volume: 0.6 }); 
-            this.selectedColor = 0xD9252B; 
-            this.updateBrushColor(0xD9252B);
+            this.selectedColor = 0xD9252B; this.updateBrushColor(0xD9252B);
             this.tweens.add({ targets: pMerah, scale: 0.9, duration: 100, yoyo: true });
         });
 
-        const pPutih = this.add.image(width - 90, height/1.8 + 10, 'paletPutih').setInteractive().setScale(0.8);
+        const pPutih = this.add.image(width - 90, height/1.75, 'paletPutih').setInteractive().setScale(0.8);
         pPutih.on('pointerdown', () => {
             if (this.gameOver || this.isAnimating) return;
             this.playGlobalSFX('pop', { volume: 0.6 }); 
-            this.selectedColor = 0xFFFFFF; 
-            this.updateBrushColor(0xFFFFFF);
+            this.selectedColor = 0xFFFFFF; this.updateBrushColor(0xFFFFFF);
             this.tweens.add({ targets: pPutih, scale: 0.9, duration: 100, yoyo: true });
         });
 
-        // JUDUL NEGARA
+        const pHijau = this.add.image(width - 90, height/1.5, 'paletHijau').setInteractive().setScale(0.8);
+        pHijau.on('pointerdown', () => {
+            if (this.gameOver || this.isAnimating) return; 
+            this.playGlobalSFX('pop', { volume: 0.6 }); 
+            this.selectedColor = 0x436F4D; this.updateBrushColor(0x436F4D);
+            this.tweens.add({ targets: pHijau, scale: 0.9, duration: 100, yoyo: true });
+        });
+
+        // KODE JUDUL NEGARA
         const titleScale = 0.46; 
         const titleWidth = 650 * titleScale;
         const titleHeight = 60 * titleScale;
@@ -302,66 +272,45 @@ class gameplayScene1 extends Phaser.Scene {
         titleOuter.lineStyle(4 * titleScale, 0x000000);
         titleOuter.strokeRoundedRect(titleX - titleWidth/2, titleY - titleHeight/2, titleWidth, titleHeight, 25 * titleScale);
 
-        this.add.text(titleX, titleY, 'INDONESIA', { fontSize: (32 * titleScale) + 'px', fontFamily: 'Arial', color: '#000000', fontStyle: 'bold' }).setOrigin(0.5);
+        this.add.text(titleX, titleY, 'HUNGARIA', { fontSize: (32 * titleScale) + 'px', fontFamily: 'Arial', color: '#000000', fontStyle: 'bold' }).setOrigin(0.5);
 
-        // TIMER SYSTEM
-        const timerScale = 0.85; 
-        const barWidth = 300 * timerScale;
-        const barHeight = 22 * timerScale;
-        const barX = width - 347;
-        const barY = 60;
-
-        // Disimpan ke variabel jamIcon biar bisa dianimasiin
-        const jamIcon = this.add.image(barX + barWidth + (40 * timerScale), barY, 'iconjam').setScale(0.1 * timerScale);
+        // TIMER
+        const barX = width - 347, barY = 60, barWidth = 300 * 0.85, barHeight = 22 * 0.85;
+        const jamIcon = this.add.image(barX + barWidth + (40 * 0.85), barY, 'iconjam').setScale(0.1 * 0.85);
         let isJamPulsing = false; 
 
         const frame = this.add.graphics();
         frame.fillStyle(0xffffff, 1);
         frame.lineStyle(2, 0xffffff);
-        frame.fillRoundedRect(barX - (6 * timerScale), barY - (16 * timerScale), barWidth + (12 * timerScale), 32 * timerScale, 16 * timerScale);
-        frame.strokeRoundedRect(barX - (6 * timerScale), barY - (16 * timerScale), barWidth + (12 * timerScale), 32 * timerScale, 16 * timerScale);
+        frame.fillRoundedRect(barX - (6 * 0.85), barY - (16 * 0.85), barWidth + (12 * 0.85), 32 * 0.85, 16 * 0.85);
+        frame.strokeRoundedRect(barX - (6 * 0.85), barY - (16 * 0.85), barWidth + (12 * 0.85), 32 * 0.85, 16 * 0.85);
 
         const timerBG = this.add.graphics();
         timerBG.fillStyle(0xffffff, 1);
         timerBG.lineStyle(2, 0x000000);
-        timerBG.fillRoundedRect(barX, barY - barHeight/2, barWidth, barHeight, 12 * timerScale);
-        timerBG.strokeRoundedRect(barX, barY - barHeight/2, barWidth, barHeight, 12 * timerScale);
+        timerBG.fillRoundedRect(barX, barY - barHeight/2, barWidth, barHeight, 12 * 0.85);
+        timerBG.strokeRoundedRect(barX, barY - barHeight/2, barWidth, barHeight, 12 * 0.85);
 
         const timerFill = this.add.graphics();
-
         const maskShapeTimer = this.make.graphics();
         maskShapeTimer.fillStyle(0xffffff);
-        maskShapeTimer.fillRoundedRect(barX, barY - barHeight/2, barWidth, barHeight, 12 * timerScale);
+        maskShapeTimer.fillRoundedRect(barX, barY - barHeight/2, barWidth, barHeight, 12 * 0.85);
         const maskTimer = maskShapeTimer.createGeometryMask();
         timerFill.setMask(maskTimer);
 
         const timerData = { value: 1 };
-
         this.timerTween = this.tweens.add({
             targets: timerData, value: 0, duration: 20000, ease: 'Linear',
             onUpdate: () => {
                 timerFill.clear();
                 timerFill.fillStyle(0xF21B1B, 1);
-                timerFill.fillRoundedRect(barX, barY - barHeight/2, barWidth * timerData.value, barHeight, 12 * timerScale);
-
-                // LOGIKA DENYUT PAS WAKTU SISA 25%
+                timerFill.fillRoundedRect(barX, barY - barHeight/2, barWidth * timerData.value, barHeight, 12 * 0.85);
                 if (timerData.value <= 0.25 && !isJamPulsing) {
                     isJamPulsing = true; 
-                    
                     jamIcon.setTint(0xff4444); 
-
-                    this.tweens.add({
-                        targets: jamIcon,
-                        scale: (0.1 * timerScale) * 1.35, 
-                        duration: 300, 
-                        yoyo: true, 
-                        repeat: -1, 
-                        ease: 'Sine.easeInOut'
-                    });
+                    this.tweens.add({ targets: jamIcon, scale: (0.1 * 0.85) * 1.35, duration: 300, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
                     this.sfxWaktu = this.sound.add('sfxTicking', { volume: 0.8, loop: true }); 
-                    if (localStorage.getItem('sfx_on') !== 'false') {
-                        this.sfxWaktu.play();
-                    }
+                    if (localStorage.getItem('sfx_on') !== 'false') this.sfxWaktu.play();
                 }
             },
             onComplete: () => { this.showLoseScreen(); }
@@ -369,34 +318,24 @@ class gameplayScene1 extends Phaser.Scene {
 
         const btnHint = this.add.image(60, height - 60, 'btnHint').setInteractive().setScale(0.8);
         this.addButtonEffect(btnHint);
-
         btnHint.on('pointerdown', () => {
-            if (this.hintCount <= 0){
-                this.showHintEmpty();
-                return;
-            }
-            this.showHintConfirm();
+            if (this.hintCount <= 0) this.showHintEmpty();
+            else this.showHintConfirm();
         });
     } 
 
-    updateBrushColor(color) {
-        this.bulu.setTint(color);
-    }
+    updateBrushColor(color) { this.bulu.setTint(color); }
 
-    // PENENTU KEMENANGAN
-    checkWinCondition(zoneTop, zoneBottom) {
+    checkWinCondition(zoneTop, zoneMid, zoneBottom) {
         if (this.gameOver) return;
-        const topColor = zoneTop.getData('colorCode');
-        const bottomColor = zoneBottom.getData('colorCode');
-
-        if (topColor === 0xD9252B && bottomColor === 0xFFFFFF) {
+        // HUNGARIA: Atas Merah, Tengah Putih, Bawah Hijau
+        if (zoneTop.getData('colorCode') === 0xD9252B && zoneMid.getData('colorCode') === 0xFFFFFF && zoneBottom.getData('colorCode') === 0x436F4D) {
             this.gameOver = true; 
-            if (this.timerTween) { this.timerTween.stop(); }
+            if (this.timerTween) this.timerTween.stop();
             this.time.delayedCall(500, () => { this.showWinScreen(); });
         }
     }
 
-    // EFEK TOMBOL GLOBAL
     addButtonEffect(btn) {
         btn.on('pointerover', () => { btn.setTint(0xdddddd); });
         btn.on('pointerout', () => { btn.clearTint(); });
@@ -408,28 +347,23 @@ class gameplayScene1 extends Phaser.Scene {
         btn.on('pointerup', () => { btn.setTint(0xdddddd); });
     }
 
-    // TAMPILAN POPUP MENANG
     showWinScreen() {
-        if (this.sfxWaktu && this.sfxWaktu.isPlaying) {
-            this.sfxWaktu.stop();
-        }
-        
+        if (this.sfxWaktu && this.sfxWaktu.isPlaying) this.sfxWaktu.stop();
         this.playGlobalSFX('soundMenang', { volume: 1.0 });
 
-        // CEK STATUS MUSIK SEBELUM MENGECILKANNYA
         let globalBgm = this.sound.get('bgm_menu');
         let isMusicOn = localStorage.getItem('music_on') !== 'false';
         if (globalBgm && globalBgm.isPlaying && isMusicOn) {
             this.tweens.add({ targets: globalBgm, volume: 0.15, duration: 800, ease: 'Linear' });
         }
 
-        let rewardLevel1 = localStorage.getItem('rewardLevel1');
-        if(!rewardLevel1){
+        let rewardLevel10 = localStorage.getItem('rewardLevel10');
+        if(!rewardLevel10){
             let hintData = localStorage.getItem('hintData');
             let hint = hintData ? parseInt(hintData) : 0;
             hint += 1;
             localStorage.setItem('hintData', hint);
-            localStorage.setItem('rewardLevel1', true);
+            localStorage.setItem('rewardLevel10', true);
         }
 
         const { width, height } = this.scale;
@@ -449,7 +383,7 @@ class gameplayScene1 extends Phaser.Scene {
         }
 
         const title = this.add.image(bgX, bgY, 'winBG').setDepth(200).setScale(bgScale * 0.8).setAlpha(0);
-        const flag = this.add.image(flagX, flagY, 'flagwin_lvl1').setDepth(201).setScale(flagScale * 0.8).setAlpha(0);
+        const flag = this.add.image(flagX, flagY, 'flagwin_lvl10').setDepth(201).setScale(flagScale * 0.8).setAlpha(0);
         const replay = this.add.image(replayX, replayY, 'btnReplay').setInteractive({ useHandCursor: true }).setDepth(202).setScale(btnScale * 0.8).setAlpha(0);
         const home = this.add.image(homeX, homeY, 'btnHome').setInteractive({ useHandCursor: true }).setDepth(202).setScale(btnScale * 0.8).setAlpha(0);
         const next = this.add.image(nextX, nextY, 'btnNext').setInteractive({ useHandCursor: true }).setDepth(202).setScale(btnScale * 0.8).setAlpha(0);
@@ -466,146 +400,64 @@ class gameplayScene1 extends Phaser.Scene {
 
         this.addButtonEffect(replay); this.addButtonEffect(home); this.addButtonEffect(next);
 
-        replay.on('pointerdown', () => {
+        const unlockNextLevel = () => {
             let levelDataStr = localStorage.getItem('levelData');
             let levelData = levelDataStr ? JSON.parse(levelDataStr) : {};
-            levelData[1] = 2; levelData[2] = 1; localStorage.setItem('levelData', JSON.stringify(levelData));
-            this.scene.restart();
-        });
+            levelData[10] = 2; 
+            if (levelData[11] !== 2) levelData[11] = 1; 
+            localStorage.setItem('levelData', JSON.stringify(levelData));
+        };
 
-        home.on('pointerdown', () => {
-            let levelDataStr = localStorage.getItem('levelData');
-            let levelData = levelDataStr ? JSON.parse(levelDataStr) : {};
-            levelData[1] = 2; levelData[2] = 1; localStorage.setItem('levelData', JSON.stringify(levelData));
-            this.scene.start('level');
-        });
-
-        next.on('pointerdown', () => {
-            let levelDataStr = localStorage.getItem('levelData');
-            let levelData = levelDataStr ? JSON.parse(levelDataStr) : {};
-            levelData[1] = 2; levelData[2] = 1; localStorage.setItem('levelData', JSON.stringify(levelData));
-            this.scene.start('gameplay2');
-        });
+        replay.on('pointerdown', () => { unlockNextLevel(); this.scene.restart(); });
+        home.on('pointerdown', () => { unlockNextLevel(); this.scene.start('level'); });
+        next.on('pointerdown', () => { unlockNextLevel(); this.scene.start('gameplay11'); }); // Lanjut Level 11
     }
 
-    // TAMPILAN POPUP KALAH
     showLoseScreen() {
         const { width, height } = this.scale;
         if (this.gameOver) return; 
         this.gameOver = true;
         if (this.timerTween) this.timerTween.stop();
-
-        if (this.sfxWaktu && this.sfxWaktu.isPlaying) {
-            this.sfxWaktu.stop();
-        }
+        if (this.sfxWaktu && this.sfxWaktu.isPlaying) this.sfxWaktu.stop();
 
         try {
             this.playGlobalSFX('soundKalah', { volume: 1.0 }); 
-            
-            // MUSIK: FADE OUT LEBIH LAMBAT & SMOOTH
             let globalBgm = this.sound.get('bgm_menu');
             let isMusicOn = localStorage.getItem('music_on') !== 'false';
             if (globalBgm && globalBgm.isPlaying && isMusicOn) {
                 this.tweens.add({ targets: globalBgm, volume: 0, duration: 1500, ease: 'Sine.easeOut' });
             }
-        } catch (e) {
-            console.warn("Audio kalah error/belum dimuat:", e);
-        }
+        } catch (e) { console.warn(e); }
 
         const textX = 660, textY = 128, xIconX = 660, xIconY = 372, replayX = 565, replayY = 615, homeX = 755, homeY = 615;
         const textScale = 1.1, xScale = 1.37, btnScale = 0.28;
 
-        // BLOCKER & PARTIKEL DEBU
         const blocker = this.add.rectangle(width/2, height/2, width, height, 0x000000).setAlpha(0).setDepth(500).setInteractive();
         this.tweens.add({ targets: blocker, alpha: 0.7, duration: 800, ease: 'Linear' });
 
-        const particles = this.add.particles(width / 2, -20, 'iconX', {
-            x: { min: 0, max: width },
-            lifespan: 8000,
-            speedY: { min: 10, max: 40 },
-            speedX: { min: -10, max: 10 },
-            scale: { start: 0.02, end: 0 },
-            quantity: 1,
-            tint: 0xF21B1B, 
-            blendMode: Phaser.BlendModes.ADD,
-            depth: 500.2
-        });
-
-        // GLOW LAYER
         const glowContainer = this.add.container(xIconX, xIconY).setDepth(500.5).setAlpha(0).setScale(0.8);
         for (let i = 1; i <= 5; i++) {
             let glowX = this.add.image(0, 0, 'iconX');
-            glowX.setScale(xScale + (i * 0.1)); 
-            glowX.setTint(0xFF0000); 
-            glowX.setAlpha(0.25 - (i * 0.04)); 
-            glowX.setBlendMode(Phaser.BlendModes.ADD);
+            glowX.setScale(xScale + (i * 0.1)).setTint(0xFF0000).setAlpha(0.25 - (i * 0.04)).setBlendMode(Phaser.BlendModes.ADD);
             glowContainer.add(glowX);
         }
-
-        this.tweens.add({
-            targets: glowContainer,
-            alpha: 1.0,
-            scale: 1.0,
-            duration: 500,
-            ease: 'Back.out', 
-            delay: 100
-        });
-
-        // EFEK DENYUT ELEGAN (PULSE)
+        this.tweens.add({ targets: glowContainer, alpha: 1.0, scale: 1.0, duration: 500, ease: 'Back.out', delay: 100 });
         this.time.delayedCall(600, () => {
-            this.tweens.add({ 
-                targets: glowContainer, 
-                scale: 1.06,           
-                alpha: 0.6,            
-                duration: 1500,        
-                yoyo: true,            
-                repeat: -1,            
-                ease: 'Sine.easeInOut' 
-            });
+            this.tweens.add({ targets: glowContainer, scale: 1.06, alpha: 0.6, duration: 1500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
         });
 
-        // JUDUL & ICON X
         const loseTextImg = this.add.image(textX, textY, 'loseText').setDepth(501).setScale(textScale).setAlpha(0);
         const iconXImg = this.add.image(xIconX, xIconY, 'iconX').setDepth(501).setScale(0.2).setAlpha(0);
 
-        this.tweens.add({
-            targets: loseTextImg,
-            y: textY,
-            alpha: 1,
-            duration: 600,
-            ease: 'Expo.out', 
-            delay: 150
-        });
+        this.tweens.add({ targets: loseTextImg, y: textY, alpha: 1, duration: 600, ease: 'Expo.out', delay: 150 });
+        this.tweens.add({ targets: iconXImg, scale: xScale, alpha: 1.0, duration: 500, ease: 'Back.out', delay: 250 });
 
-        this.tweens.add({
-            targets: iconXImg,
-            scale: xScale,
-            alpha: 1.0,
-            duration: 500,
-            ease: 'Back.out', 
-            delay: 250
-        });
-
-        // TOMBOL MUNCUL BERURUTAN
         const replay = this.add.image(replayX, replayY + 150, 'btnReplayLose').setDepth(502).setScale(btnScale).setAlpha(0);
         const home = this.add.image(homeX, homeY + 150, 'btnHomeLose').setDepth(502).setScale(btnScale).setAlpha(0);
 
+        this.tweens.add({ targets: replay, y: replayY, alpha: 1, duration: 600, ease: 'Power3.out', delay: 1000 });
         this.tweens.add({
-            targets: replay,
-            y: replayY,
-            alpha: 1,
-            duration: 600,
-            ease: 'Power3.out', 
-            delay: 1000 
-        });
-
-        this.tweens.add({
-            targets: home,
-            y: homeY,
-            alpha: 1,
-            duration: 600,
-            ease: 'Power3.out',
-            delay: 1200, 
+            targets: home, y: homeY, alpha: 1, duration: 600, ease: 'Power3.out', delay: 1200, 
             onComplete: () => {
                 replay.setInteractive({ useHandCursor: true }); home.setInteractive({ useHandCursor: true });
                 this.addButtonEffect(replay); this.addButtonEffect(home);
@@ -621,8 +473,6 @@ class gameplayScene1 extends Phaser.Scene {
         home.on('pointerdown', () => { this.scene.start('level'); });
     }
 
-    // BAGIAN HINT YANG SUDAH DI-UPDATE
-
     showHintConfirm(){
         const {width,height} = this.scale;
         if(this.timerTween) this.timerTween.pause();
@@ -632,8 +482,7 @@ class gameplayScene1 extends Phaser.Scene {
         const btnYes = this.add.image(width/2-105,height/2+55,'btnYes').setInteractive().setDepth(602).setScale(0.092);
         const btnNo = this.add.image(width/2+70,height/2+55,'btnNo').setInteractive().setDepth(602).setScale(0.092);
 
-        this.addButtonEffect(btnYes);
-        this.addButtonEffect(btnNo);
+        this.addButtonEffect(btnYes); this.addButtonEffect(btnNo);
 
         btnNo.on('pointerdown',()=>{
             this.playGlobalSFX('pop'); 
@@ -656,10 +505,7 @@ class gameplayScene1 extends Phaser.Scene {
         }
 
         const {width,height} = this.scale;
-
-        let availableQuestions = this.hintQuestions.filter((q,i)=>{
-            return !this.usedHintQuestions.includes(i);
-        });
+        let availableQuestions = this.hintQuestions.filter((q,i)=>{ return !this.usedHintQuestions.includes(i); });
 
         if(availableQuestions.length === 0){
             alert("Semua soal hint sudah dipakai!");
@@ -668,93 +514,41 @@ class gameplayScene1 extends Phaser.Scene {
 
         let randomIndex = Phaser.Math.Between(0,availableQuestions.length-1);
         let data = availableQuestions[randomIndex];
+        this.usedHintQuestions.push(this.hintQuestions.indexOf(data));
 
-        let originalIndex = this.hintQuestions.indexOf(data);
-        this.usedHintQuestions.push(originalIndex);
-
-        const bg = this.add.rectangle(width/2,height/2,width,height,0x000000)
-            .setAlpha(0.7)
-            .setDepth(700)
-            .setInteractive();
-
-        const box = this.add.image(width/2,height/2,'quizBG')
-            .setDepth(701)
-            .setScale(0.6);
-
-        const question = this.add.text(width/2 + -15,height/2-60,data.q,{
-            fontSize:"21px",
-            fontFamily:"Arial",
-            color:"#000000",
-            align:"center",
-            wordWrap:{width:500}
-        })
-        .setOrigin(0.5)
-        .setDepth(702);
+        const bg = this.add.rectangle(width/2,height/2,width,height,0x000000).setAlpha(0.7).setDepth(700).setInteractive();
+        const box = this.add.image(width/2,height/2,'quizBG').setDepth(701).setScale(0.6);
+        const question = this.add.text(width/2 + -15,height/2-60,data.q,{ fontSize:"21px", fontFamily:"Arial", color:"#000000", align:"center", wordWrap:{width:500} }).setOrigin(0.5).setDepth(702);
 
         let options = [];
-
         const destroyAll = ()=>{
-            bg.destroy();
-            box.destroy();
-            question.destroy();
-            options.forEach(o=>{
-                o.bg.destroy();
-                o.text.destroy();
-            });
+            bg.destroy(); box.destroy(); question.destroy();
+            options.forEach(o=>{ o.bg.destroy(); o.text.destroy(); });
         };
 
-        const centerX = width / 2 + -20;   
-        const startY = height / 2 + 20;   
-        const offsetX = 110; 
-        const gapY = 70;     
+        const centerX = width / 2 + -20, startY = height / 2 + 20, offsetX = 110, gapY = 70;     
 
         const createOption = (text, x, y, key)=>{
-            let btnBG = this.add.image(x,y,'optionBtn')
-                .setDepth(702)
-                .setScale(0.08)
-                .setInteractive({ useHandCursor:true });
-
-            let btnText = this.add.text(x,y,text,{
-                fontSize:"19px",
-                fontFamily:"Arial",
-                color:"#000"
-            })
-            .setOrigin(0.5)
-            .setDepth(703);
-
+            let btnBG = this.add.image(x,y,'optionBtn').setDepth(702).setScale(0.08).setInteractive({ useHandCursor:true });
+            let btnText = this.add.text(x,y,text,{ fontSize:"19px", fontFamily:"Arial", color:"#000" }).setOrigin(0.5).setDepth(703);
             this.addButtonEffect(btnBG);
-
-            btnBG.on("pointerover",()=> btnBG.setScale(0.08));
-            btnBG.on("pointerout",()=> btnBG.setScale(0.08));
 
             btnBG.on("pointerdown",()=>{
                 this.playGlobalSFX('pop'); 
-                
                 this.hintCount--;
                 localStorage.setItem('hintData', this.hintCount);
 
                 if(key === data.correct){
                     btnBG.setTint(0x00ff00);
-
-                    this.time.delayedCall(300, ()=>{
-                        destroyAll();
-                        this.showHintAnswer();
-                    });
-
+                    this.time.delayedCall(300, ()=>{ destroyAll(); this.showHintAnswer(); });
                 }else{
                     btnBG.setTint(0xff0000);
-
                     this.time.delayedCall(400, ()=>{
                         btnBG.clearTint(); 
-
-                        if(this.hintCount <= 0){
-                            destroyAll();
-                            if(this.timerTween) this.timerTween.resume();
-                        }
+                        if(this.hintCount <= 0){ destroyAll(); if(this.timerTween) this.timerTween.resume(); }
                     });
                 }
             });
-
             options.push({bg:btnBG,text:btnText});
         };
 
@@ -767,104 +561,42 @@ class gameplayScene1 extends Phaser.Scene {
     showHintAnswer(){
         if (this.timerTween) this.timerTween.pause();
 
-        let availableHints = this.flagAnswers.filter((h,i)=>{
-            return !this.usedFlagHints.includes(i);
-        });
-
-        if(availableHints.length === 0){
-            this.usedFlagHints = [];
-            availableHints = this.flagAnswers;
-        }
+        let availableHints = this.flagAnswers.filter((h,i)=>{ return !this.usedFlagHints.includes(i); });
+        if(availableHints.length === 0){ this.usedFlagHints = []; availableHints = this.flagAnswers; }
 
         let randomIndex = Phaser.Math.Between(0, availableHints.length - 1);
         let hint = availableHints[randomIndex];
-
-        let originalIndex = this.flagAnswers.indexOf(hint);
-        this.usedFlagHints.push(originalIndex);
+        this.usedFlagHints.push(this.flagAnswers.indexOf(hint));
 
         const { width, height } = this.scale;
-
-        const bg = this.add.rectangle(width/2, height/2, width, height, 0x000000)
-            .setAlpha(0.6)
-            .setDepth(800)
-            .setInteractive();
-
-        const box = this.add.image(width/2, height/2, 'kotak_win')
-            .setDepth(801)
-            .setScale(0.35);
-
-        const text = this.add.text(width/2, height/2, hint.text, {
-            fontSize: "26px",
-            fontFamily: "Arial",
-            color: "#000000",
-            align: "center",
-            wordWrap: { width: 400 }
-        })
-        .setOrigin(0.5)
-        .setDepth(802);
-
-        const btnClose = this.add.image(width/2 + 260, height/2 - 90, 'btn_x')
-            .setDepth(803)
-            .setScale(0.15)
-            .setInteractive({ useHandCursor: true });
-
+        const bg = this.add.rectangle(width/2, height/2, width, height, 0x000000).setAlpha(0.6).setDepth(800).setInteractive();
+        const box = this.add.image(width/2, height/2, 'kotak_win').setDepth(801).setScale(0.35);
+        const text = this.add.text(width/2, height/2, hint.text, { fontSize: "26px", fontFamily: "Arial", color: "#000000", align: "center", wordWrap: { width: 400 } }).setOrigin(0.5).setDepth(802);
+        const btnClose = this.add.image(width/2 + 260, height/2 - 90, 'btn_x').setDepth(803).setScale(0.15).setInteractive({ useHandCursor: true });
         this.addButtonEffect(btnClose);
 
         btnClose.on('pointerdown', () => {
             this.playGlobalSFX('pop'); 
-            bg.destroy();
-            box.destroy();
-            text.destroy();
-            btnClose.destroy();
-
+            bg.destroy(); box.destroy(); text.destroy(); btnClose.destroy();
             if (this.timerTween) this.timerTween.resume();
         });
 
-        if(hint.top){
-            this.selectedColor = hint.top;
-            this.updateBrushColor(hint.top);
-        }
-
-        if(hint.bottom){
-            this.selectedColor = hint.bottom;
-            this.updateBrushColor(hint.bottom);
-        }
+        if(hint.top){ this.selectedColor = hint.top; this.updateBrushColor(hint.top); }
+        if(hint.mid){ this.selectedColor = hint.mid; this.updateBrushColor(hint.mid); }
+        if(hint.bottom){ this.selectedColor = hint.bottom; this.updateBrushColor(hint.bottom); }
     }
 
     showHintEmpty(){
         const { width, height } = this.scale;
-
-        const bg = this.add.rectangle(width/2, height/2, width, height, 0x000000)
-            .setAlpha(0.6)
-            .setDepth(900)
-            .setInteractive();
-
-        const box = this.add.image(width/2, height/2, 'kotak_win')
-            .setDepth(901)
-            .setScale(0.35);
-
-        const text = this.add.text(width/2, height/2, "HINT HABIS!", {
-            fontSize: "26px",
-            fontFamily: "Arial",
-            color: "#000000",
-            align: "center"
-        })
-        .setOrigin(0.5)
-        .setDepth(902);
-
-        const btnClose = this.add.image(width/2 + 260, height/2 - 90, 'btn_x')
-            .setDepth(903)
-            .setScale(0.15)
-            .setInteractive({ useHandCursor: true });
-
+        const bg = this.add.rectangle(width/2, height/2, width, height, 0x000000).setAlpha(0.6).setDepth(900).setInteractive();
+        const box = this.add.image(width/2, height/2, 'kotak_win').setDepth(901).setScale(0.35);
+        const text = this.add.text(width/2, height/2, "HINT HABIS!", { fontSize: "26px", fontFamily: "Arial", color: "#000000", align: "center" }).setOrigin(0.5).setDepth(902);
+        const btnClose = this.add.image(width/2 + 260, height/2 - 90, 'btn_x').setDepth(903).setScale(0.15).setInteractive({ useHandCursor: true });
         this.addButtonEffect(btnClose);
 
         btnClose.on('pointerdown', () => {
             this.playGlobalSFX('pop'); 
-            bg.destroy();
-            box.destroy();
-            text.destroy();
-            btnClose.destroy();
+            bg.destroy(); box.destroy(); text.destroy(); btnClose.destroy();
         });
     }
 }
