@@ -287,8 +287,8 @@ class menuScene extends Phaser.Scene {
       { text: "Tapi tunggu... ada yang aneh. Akhir-akhir ini, banyak bendera negara kehilangan warnanya secara misterius.", sprite: 'char_thinking' },
       { text: "Tanpa warna, identitas negara-negara itu menghilang! Kita tidak bisa membiarkan kekacauan ini terjadi.", sprite: 'char_explain' },
       { text: "Di sinilah misimu dimulai! Kembalikan identitas negara-negara tersebut dengan mewarnai kembali bendera mereka yang telah memudar.", sprite: 'char_explain' },
-      { text: "Pertama, pilih warna yang tepat dari palet. Sebagai contoh, aku membutuhkan warna merah.", sprite: 'char_explain', showTutorial: true, tutImageKey: 'tutorial_img', imageScale: 0.4, pointerText: "1. Pilih Palet Warna", pointerX: 310, pointerY: 80 },
-      { text: "Kedua, klik pada bagian kanvas bendera yang kosong untuk mewarnainya sesuai warnanya.", sprite: 'char_explain', showTutorial: true, tutImageKey: 'tutorial2_img', imageScale: 0.4, pointerText: "2. Warnai Canvas", pointerX: -50, pointerY: 0 },
+      { text: "Pertama, pilih warna yang tepat dari palet. Sebagai contoh, aku membutuhkan warna merah.", sprite: 'char_explain', showTutorial: true, tutImageKey: 'tutorial_img', imageScale: 0.55, pointerText: "1. Pilih Palet Warna", pointerX: 310, pointerY: 80 },
+      { text: "Kedua, klik pada bagian kanvas bendera yang kosong untuk mewarnainya sesuai warnanya.", sprite: 'char_explain', showTutorial: true, tutImageKey: 'tutorial2_img', imageScale: 0.55, pointerText: "2. Warnai Canvas", pointerX: -50, pointerY: 0 },
       { text: "Ketiga, perhatikan batas waktu di atas! Jika waktu habis sebelum bendera selesai, kamu kalah.", sprite: 'char_thinking', showTutorial: true, tutImageKey: 'tutorial2_img', imageScale: 0.8, pointerText: "3. Perhatikan Waktu!", pointerX: 175, pointerY: -140 },
       { text: "Hati-hati dan perhatikan posisinya ya! Jangan sampai warnanya tertukar atau salah tempat.", sprite: 'char_thinking' },
       { text: "Aku sangat percaya pada kemampuan senimu untuk menyelamatkan dunia ini. Selamat bermain, Seniman!", sprite: 'char_goodluck' }
