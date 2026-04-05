@@ -12,8 +12,26 @@ class levelScene extends Phaser.Scene {
     // preload button level
     this.load.image('levelpijak', 'asset/levelpijak.png'); // current (bisa dimainkan)
     this.load.image('levellock', 'asset/levellock.png');   // locked
-    this.load.image('level1', 'asset/level1.png'); // completed
-    this.load.image('level2', 'asset/level2.png'); // completed
+    this.load.image('level1', 'asset/level1.png');   // completed
+    this.load.image('level2', 'asset/level2.png');   // completed
+    this.load.image('level3', 'asset/level3.png');   // completed
+    this.load.image('level4', 'asset/level4.png');   // completed
+    this.load.image('level5', 'asset/level5.png');   // completed
+    this.load.image('level6', 'asset/level6.png');   // completed
+    this.load.image('level7', 'asset/level7.png');   // completed
+    this.load.image('level8', 'asset/level8.png');   // completed
+    this.load.image('level9', 'asset/level9.png');   // completed
+    this.load.image('level10', 'asset/level10.png'); // completed
+    this.load.image('level11', 'asset/level11.png'); // completed
+    this.load.image('level12', 'asset/level12.png'); // completed
+    this.load.image('level13', 'asset/level13.png'); // completed
+    this.load.image('level14', 'asset/level14.png'); // completed
+    this.load.image('level15', 'asset/level15.png'); // completed
+    this.load.image('level16', 'asset/level16.png'); // completed
+    this.load.image('level17', 'asset/level17.png'); // completed
+    this.load.image('level18', 'asset/level18.png'); // completed
+    this.load.image('level19', 'asset/level19.png'); // completed
+    this.load.image('level20', 'asset/level20.png'); // completed
     this.load.audio('pop', 'asset/pop.mp3');
   }
 
