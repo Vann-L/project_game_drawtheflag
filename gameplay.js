@@ -532,7 +532,7 @@ class gameplayScene1 extends Phaser.Scene {
         });
     }
 
-    showQuizHint(){
+  showQuizHint(){
         if(this.hintCount <= 0){ alert("Hint sudah habis!"); if(this.timerTween) this.timerTween.resume(); return; }
 
         const {width,height} = this.scale;
@@ -569,22 +569,12 @@ class gameplayScene1 extends Phaser.Scene {
             return btn;
         };
 
-        optA = createOption("A. "+data.a,height/2-20,"a"); optB = createOption("B. "+data.b,height/2+40,"b"); optC = createOption("C. "+data.c,height/2+100,"c"); optD = createOption("D. "+data.d,height/2+160,"d");
+        // --- TAMPILAN JAWABAN 1 KOLOM KE BAWAH ---
+        optA = createOption("A. "+data.a, height/2 - 20, "a"); 
+        optB = createOption("B. "+data.b, height/2 + 40, "b"); 
+        optC = createOption("C. "+data.c, height/2 + 100, "c"); 
+        optD = createOption("D. "+data.d, height/2 + 160, "d");
     }
-});
-
-        options.push({bg:btnBG,text:btnText});
-    };
-
-    // ================= 2 KOLOM =================
-    // baris 1
-    createOption("A. "+data.a, centerX - offsetX, startY, "a");
-    createOption("B. "+data.b, centerX + offsetX, startY, "b");
-
-    // baris 2
-    createOption("C. "+data.c, centerX - offsetX, startY + gapY, "c");
-    createOption("D. "+data.d, centerX + offsetX, startY + gapY, "d");
-}
 
     showHintAnswer(){
         let availableHints = this.flagAnswers.filter((h,i)=>{ return !this.usedFlagHints.includes(i); });
@@ -599,4 +589,4 @@ class gameplayScene1 extends Phaser.Scene {
         if(hint.top){ this.selectedColor = hint.top; this.updateBrushColor(hint.top); }
         if(hint.bottom){ this.selectedColor = hint.bottom; this.updateBrushColor(hint.bottom); }
     }
-}
+} 
