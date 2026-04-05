@@ -41,7 +41,8 @@ class menuScene extends Phaser.Scene {
     this.load.image('off_musik', 'asset/off_musik.png');
     this.load.image('on_suara', 'asset/on_suara.png');
     this.load.image('off_suara', 'asset/off_suara.png');
-    this.load.image('ulang_game', 'asset/ulang_game.png');
+    this.load.image('reset_game', 'asset/reset_game.png');
+    this.load.image('popup_reset', 'asset/popup_reset.png');
   }
 
   // 🔥 FUNGSI PEMBANTU UNTUK SFX MENU (Agar bisa di-mute)
@@ -163,7 +164,7 @@ class menuScene extends Phaser.Scene {
     this.btnSfxOff = this.add.image(148, -20, 'off_suara').setInteractive({ useHandCursor: true }).setAlpha(isSfxOn ? 0.5 : 1).setScale(1.1);
 
     // Tombol Ulang Game
-    const btnReset = this.add.image(0, 110, 'ulang_game').setInteractive({ useHandCursor: true }).setScale(1.1);
+    const btnReset = this.add.image(0, 110, 'reset_game').setInteractive({ useHandCursor: true }).setScale(1.1);
 
     this.settingContainer.add([popupBgSetting, btnCloseSetting, this.btnMusicOn, this.btnMusicOff, this.btnSfxOn, this.btnSfxOff, btnReset]);
 
@@ -212,22 +213,69 @@ class menuScene extends Phaser.Scene {
         this.btnSfxOff.setAlpha(1);
     });
 
+// --- LOGIKA TOMBOL RESET (DI DALAM SETTING) ---
     btnReset.on('pointerdown', () => {
         this.playMenuSFX('sfx_pop');
         
-        // Simpan state audio agar tidak ikut keriset
+        // Sembunyikan menu pengaturan sebentar biar gak tumpuk-tumpuk
+        this.settingBlocker.setVisible(false);
+        this.settingContainer.setVisible(false);
+        
+        // Munculkan popup konfirmasi reset
+        this.resetBlocker.setVisible(true);
+        this.resetContainer.setVisible(true);
+        this.tweens.add({ targets: this.resetContainer, scale: 1, duration: 250, ease: 'Back.out' });
+    });
+
+    // === 6. SETUP POPUP RESET (TARUH DI BAWAH LOGIKA SETTING) ===
+    this.resetBlocker = this.add.rectangle(width/2, height/2, width, height, 0x000000, 0.7)
+        .setDepth(150).setInteractive().setVisible(false);
+
+    this.resetContainer = this.add.container(width/2, height/2)
+        .setDepth(151).setVisible(false).setScale(0.8);
+
+    const popupResetImg = this.add.image(0, -27, 'popup_reset').setScale(0.49);
+    const btnResetYes = this.add.image(-100, 38, 'btn_yes').setScale(0.092).setInteractive({ useHandCursor: true });
+    const btnResetNo = this.add.image(60, 38, 'btn_no').setScale(0.092).setInteractive({ useHandCursor: true });
+
+    this.resetContainer.add([popupResetImg, btnResetYes, btnResetNo]);
+
+    // LOGIKA TOMBOL YES (RESET)
+    btnResetYes.on('pointerdown', () => {
+        this.playMenuSFX('sfx_pop');
+        
+        // Backup status audio biar gak ikut ilang
         let m = localStorage.getItem('music_on');
         let s = localStorage.getItem('sfx_on');
         
-        // Hapus data level dan hint
-        localStorage.clear();
+        localStorage.clear(); // Hapus progress game
         
-        // Kembalikan state audio
         if(m) localStorage.setItem('music_on', m);
         if(s) localStorage.setItem('sfx_on', s);
         
-        alert("Progress level dan petunjuk telah direset!");
-        this.scene.restart();
+        // Efek transisi pas reset biar keren
+        this.cameras.main.fadeOut(500, 0, 0, 0);
+        this.cameras.main.once('camerafadeoutcomplete', () => {
+            this.scene.restart();
+        });
+    });
+
+    // LOGIKA TOMBOL NO (BATAL)
+    btnResetNo.on('pointerdown', () => {
+        this.playMenuSFX('sfx_pop');
+        this.resetBlocker.setVisible(false);
+        this.resetContainer.setVisible(false);
+        this.resetContainer.setScale(0.8); 
+        
+        // Balikin lagi ke menu pengaturan
+        this.settingBlocker.setVisible(true);
+        this.settingContainer.setVisible(true);
+    });
+
+    // Hover effect biar tombolnya berasa hidup
+    [btnResetYes, btnResetNo].forEach(btn => {
+        btn.on('pointerover', () => btn.setTint(0xeeeeee));
+        btn.on('pointerout', () => btn.clearTint());
     });
 
     // ==========================================================

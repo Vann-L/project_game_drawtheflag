@@ -39,6 +39,7 @@ class gameplayScene1 extends Phaser.Scene {
         this.load.audio('pop', 'asset/pop.mp3');
         this.load.audio('soundMenang', 'asset/menang.mp3'); 
         this.load.audio('soundKalah', 'asset/kalah.mp3'); 
+        this.load.audio('sfxTicking', 'asset/clock_ticking.mp3');
     }
 
     // 🔥 FUNGSI PEMBANTU CEK SFX 🔥
@@ -310,7 +311,9 @@ class gameplayScene1 extends Phaser.Scene {
         const barX = width - 347;
         const barY = 60;
 
-        this.add.image(barX + barWidth + (40 * timerScale), barY, 'iconjam').setScale(0.1 * timerScale);
+// Kita simpan ke variabel jamIcon biar bisa dianimasiin nanti
+const jamIcon = this.add.image(barX + barWidth + (40 * timerScale), barY, 'iconjam').setScale(0.1 * timerScale);
+let isJamPulsing = false; // Penanda biar animasinya gak ngeloop error
 
         const frame = this.add.graphics();
         frame.fillStyle(0xffffff, 1);
@@ -334,12 +337,33 @@ class gameplayScene1 extends Phaser.Scene {
 
         const timerData = { value: 1 };
 
-        this.timerTween = this.tweens.add({
+this.timerTween = this.tweens.add({
             targets: timerData, value: 0, duration: 20000, ease: 'Linear',
             onUpdate: () => {
                 timerFill.clear();
                 timerFill.fillStyle(0xF21B1B, 1);
                 timerFill.fillRoundedRect(barX, barY - barHeight/2, barWidth * timerData.value, barHeight, 12 * timerScale);
+
+                // 🔥 INI TAMBAHANNYA: LOGIKA DENYUT PAS WAKTU SISA 25% 🔥
+                if (timerData.value <= 0.25 && !isJamPulsing) {
+                    isJamPulsing = true; // Kunci biar gak dipanggil berkali-kali
+                    
+                    jamIcon.setTint(0xff4444); // Bikin jamnya agak kemerahan
+
+                    // Animasi denyut
+                    this.tweens.add({
+                        targets: jamIcon,
+                        scale: (0.1 * timerScale) * 1.35, // Membesar 35%
+                        duration: 300, // Kecepatan denyut
+                        yoyo: true, 
+                        repeat: -1, 
+                        ease: 'Sine.easeInOut'
+                    });
+                    this.sfxWaktu = this.sound.add('sfxTicking', { volume: 0.8, loop: true }); 
+                    if (localStorage.getItem('sfx_on') !== 'false') {
+                        this.sfxWaktu.play();
+                    }
+                }
             },
             onComplete: () => { this.showLoseScreen(); }
         });
@@ -385,6 +409,9 @@ class gameplayScene1 extends Phaser.Scene {
     }
 
     showWinScreen() {
+        if (this.sfxWaktu && this.sfxWaktu.isPlaying) {
+            this.sfxWaktu.stop();
+        }
         // 🔥 MAINKAN SFX MENANG (CEK DULU) 🔥
         this.playGlobalSFX('soundMenang', { volume: 1.0 });
 
@@ -460,21 +487,25 @@ class gameplayScene1 extends Phaser.Scene {
         });
     }
 
-  showLoseScreen() {
+showLoseScreen() {
         const { width, height } = this.scale;
         if (this.gameOver) return; 
         this.gameOver = true;
         if (this.timerTween) this.timerTween.stop();
 
+        if (this.sfxWaktu && this.sfxWaktu.isPlaying) {
+            this.sfxWaktu.stop();
+        }
+
         try {
             // 🔥 PAKAI FUNGSI CEK SFX 🔥
-            this.playGlobalSFX('soundKalah', { volume: 0.8 }); 
+            this.playGlobalSFX('soundKalah', { volume: 1.0 }); 
             
-            // 🔥 CEK JUGA STATUS MUSIK SEBELUM MENGECILKANNYA 🔥
+            // 🔥 MUSIK: FADE OUT LEBIH LAMBAT & SMOOTH 🔥
             let globalBgm = this.sound.get('bgm_menu');
             let isMusicOn = localStorage.getItem('music_on') !== 'false';
             if (globalBgm && globalBgm.isPlaying && isMusicOn) {
-                this.tweens.add({ targets: globalBgm, volume: 0.1, duration: 500, ease: 'Linear' });
+                this.tweens.add({ targets: globalBgm, volume: 0, duration: 1500, ease: 'Sine.easeOut' });
             }
         } catch (e) {
             console.warn("Audio kalah error/belum dimuat:", e);
@@ -483,31 +514,110 @@ class gameplayScene1 extends Phaser.Scene {
         const textX = 660, textY = 128, xIconX = 660, xIconY = 372, replayX = 565, replayY = 615, homeX = 755, homeY = 615;
         const textScale = 1.1, xScale = 1.37, btnScale = 0.28;
 
+        // ================= BLOCKER & PARTIKEL DEBU =================
         const blocker = this.add.rectangle(width/2, height/2, width, height, 0x000000).setAlpha(0).setDepth(500).setInteractive();
-        this.tweens.add({ targets: blocker, alpha: 0.7, duration: 500 });
+        this.tweens.add({ targets: blocker, alpha: 0.7, duration: 800, ease: 'Linear' });
 
-        const glowContainer = this.add.container(xIconX, xIconY).setDepth(500.5).setAlpha(0);
+        const particles = this.add.particles(width / 2, -20, 'iconX', {
+            x: { min: 0, max: width },
+            lifespan: 8000,
+            speedY: { min: 10, max: 40 },
+            speedX: { min: -10, max: 10 },
+            scale: { start: 0.02, end: 0 },
+            quantity: 1,
+            tint: 0xF21B1B, 
+            blendMode: Phaser.BlendModes.ADD,
+            depth: 500.2
+        });
+
+        // ================= GLOW LAYER (SMOOTH PULSE TANPA MUTER) =================
+        const glowContainer = this.add.container(xIconX, xIconY).setDepth(500.5).setAlpha(0).setScale(0.8);
         for (let i = 1; i <= 5; i++) {
             let glowX = this.add.image(0, 0, 'iconX');
-            glowX.setScale(xScale + (i * 0.12)); glowX.setTint(0xFF0000); glowX.setAlpha(0.25 - (i * 0.04)); glowX.setBlendMode(Phaser.BlendModes.ADD);
+            glowX.setScale(xScale + (i * 0.1)); 
+            glowX.setTint(0xFF0000); 
+            glowX.setAlpha(0.25 - (i * 0.04)); 
+            glowX.setBlendMode(Phaser.BlendModes.ADD);
             glowContainer.add(glowX);
         }
 
-        const loseTextImg = this.add.image(textX, textY, 'loseText').setDepth(501).setScale(textScale).setAlpha(0);
-        const iconXImg = this.add.image(xIconX, xIconY, 'iconX').setDepth(501).setScale(xScale).setAlpha(0);
-        const replay = this.add.image(replayX, replayY + 50, 'btnReplayLose').setDepth(502).setScale(btnScale).setAlpha(0);
-        const home = this.add.image(homeX, homeY + 50, 'btnHomeLose').setDepth(502).setScale(btnScale).setAlpha(0);
+        // --- MUNCULNYA GLOW KALI PERTAMA ---
+        this.tweens.add({
+            targets: glowContainer,
+            alpha: 1.0,
+            scale: 1.0,
+            duration: 500,
+            ease: 'Back.out', 
+            delay: 100
+        });
 
-        this.tweens.add({ targets: loseTextImg, alpha: 1, duration: 600, ease: 'Linear', delay: 100 });
-        this.tweens.add({ targets: iconXImg, alpha: 1.0, duration: 800, ease: 'Linear', delay: 200 });
-        this.tweens.add({ targets: glowContainer, alpha: 1, duration: 800, ease: 'Linear', delay: 200 });
+        // 🔥 EFEK DENYUT ELEGAN (PULSE) 🔥
+        this.time.delayedCall(600, () => {
+            this.tweens.add({ 
+                targets: glowContainer, 
+                scale: 1.06,           // Membesar dikit aja biar gak lebay
+                alpha: 0.6,            // Agak meredup pas membesar
+                duration: 1500,        // Waktu denyut 1.5 detik per fase
+                yoyo: true,            // Membesar -> Mengecil -> Membesar
+                repeat: -1,            // Ulangi terus
+                ease: 'Sine.easeInOut' // Transisi paling smooth
+            });
+        });
+
+        // ================= JUDUL & ICON X =================
+        const loseTextImg = this.add.image(textX, textY, 'loseText').setDepth(501).setScale(textScale).setAlpha(0);
+        const iconXImg = this.add.image(xIconX, xIconY, 'iconX').setDepth(501).setScale(0.2).setAlpha(0);
+
+        // --- JUDUL JATUH DARI ATAS ---
+        this.tweens.add({
+            targets: loseTextImg,
+            y: textY,
+            alpha: 1,
+            duration: 600,
+            ease: 'Expo.out', 
+            delay: 150
+        });
+
+        // --- ICON X MUNCUL MEMBAL ---
+        this.tweens.add({
+            targets: iconXImg,
+            scale: xScale,
+            alpha: 1.0,
+            duration: 500,
+            ease: 'Back.out', 
+            delay: 250
+        });
+
+        // ================= TOMBOL MUNCUL BERURUTAN =================
+        const replay = this.add.image(replayX, replayY + 150, 'btnReplayLose').setDepth(502).setScale(btnScale).setAlpha(0);
+        const home = this.add.image(homeX, homeY + 150, 'btnHomeLose').setDepth(502).setScale(btnScale).setAlpha(0);
 
         this.tweens.add({
-            targets: [replay, home], y: replayY, alpha: 1, duration: 500, ease: 'Cubic.out', delay: 1000, 
+            targets: replay,
+            y: replayY,
+            alpha: 1,
+            duration: 600,
+            ease: 'Power3.out', 
+            delay: 1000 
+        });
+
+        this.tweens.add({
+            targets: home,
+            y: homeY,
+            alpha: 1,
+            duration: 600,
+            ease: 'Power3.out',
+            delay: 1200, 
             onComplete: () => {
                 replay.setInteractive({ useHandCursor: true }); home.setInteractive({ useHandCursor: true });
                 this.addButtonEffect(replay); this.addButtonEffect(home);
             }
+        });
+
+        // --- TOMBOL IKUT BERNAFAS DIKIT ---
+        this.time.delayedCall(1800, () => {
+            this.tweens.add({ targets: replay, scale: btnScale * 1.03, duration: 1500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+            this.tweens.add({ targets: home, scale: btnScale * 1.03, duration: 1500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut', delay: 300 });
         });
 
         replay.on('pointerdown', () => { this.scene.restart(); });
