@@ -8,6 +8,7 @@ class menuScene extends Phaser.Scene {
     this.load.image('bg', 'asset/BG MAIN MENU.png');
     this.load.image('btnPlay', 'asset/TOMBOL PLAY.png');
     this.load.image('title', 'asset/title.png');
+    this.load.image('btn_credit', 'asset/TOMBOL CREDIT.png');
     
     // Load 5 ekspresi karakter buat narasi di awal
     this.load.image('char_welcome', 'asset/wellcome.png');
@@ -224,6 +225,27 @@ class menuScene extends Phaser.Scene {
         this.btnSfxOff.setAlpha(1);
     });
 
+// --- TAMBAHAN TOMBOL CREDIT DI POJOK KIRI ---
+this.creditBtn = this.add.image(60, 60, 'btn_credit') // Posisi x:60, y:60 (Pojok kiri atas)
+    .setScale(0.8)
+    .setDepth(50)
+    .setInteractive({ useHandCursor: true });
+
+// Efek hover biar konsisten dengan tombol pengaturan
+this.creditBtn.on('pointerover', () => { this.creditBtn.setScale(0.85); });
+this.creditBtn.on('pointerout', () => { this.creditBtn.setScale(0.8); });
+
+// Event klik untuk pindah scene
+this.creditBtn.on('pointerdown', () => {
+    this.playMenuSFX('sfx_pop');
+    
+    // Transisi fade out sebelum pindah ke scene credit
+    this.cameras.main.fadeOut(500, 0, 0, 0);
+    this.cameras.main.once('camerafadeoutcomplete', () => {
+        this.scene.start('credit'); // Pastikan nama scene 'credit' sesuai dengan class creditScene kamu
+    });
+});
+
     // 6. POPUP RESET GAME (Muncul kalau pencet tombol reset di setting)
     btnReset.on('pointerdown', () => {
         this.playMenuSFX('sfx_pop');
@@ -384,7 +406,8 @@ class menuScene extends Phaser.Scene {
   startIntro() {
     this.introClickZone.setActive(true).setVisible(true);
     this.skipBtn.setActive(true);
-    this.settingBtn.setVisible(false); 
+    this.settingBtn.setVisible(false);
+    this.creditBtn.setVisible(false); 
 
     // Kecilin lagu menu pas cerita mulai
     if (localStorage.getItem('music_on') !== 'false') {
@@ -511,7 +534,7 @@ const config = {
   antialiasGL: true, 
   roundPixels: false, 
   // Urutan scene-nya didaftarin di sini (Menu paling awal)
- scene: [menuScene, levelScene, gameplayScene1, gameplayScene2, gameplayScene3, gameplayScene4, gameplayScene5, gameplayScene6,  gameplayScene7, gameplayScene8, gameplayScene9, gameplayScene10, gameplayScene11, gameplayScene12],
+ scene: [menuScene, creditScene, levelScene, gameplayScene1, gameplayScene2, gameplayScene3, gameplayScene4, gameplayScene5, gameplayScene6,  gameplayScene7, gameplayScene8, gameplayScene9, gameplayScene10, gameplayScene11, gameplayScene12],
 };
 
 new Phaser.Game(config);
