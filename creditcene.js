@@ -132,8 +132,8 @@ class creditScene extends Phaser.Scene {
         });
 
         // 5. TOMBOL BACK
-        const backBtn = this.add.image(100, 80, 'btnBack')
-            .setScale(0.8)
+        const backBtn = this.add.image(70, 60, 'btnBack')
+            .setScale(1)
             .setInteractive({ useHandCursor: true })
             .setDepth(10);
 

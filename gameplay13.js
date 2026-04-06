@@ -1,6 +1,6 @@
-class gameplayScene6 extends Phaser.Scene {
+class gameplayScene13 extends Phaser.Scene {
     constructor() {
-        super('gameplay6');
+        super('gameplay13');
     }
 
     preload() {
@@ -8,10 +8,10 @@ class gameplayScene6 extends Phaser.Scene {
         this.load.image('btnBack', 'asset/tombolback.png');
         this.load.image('btnHint', 'asset/petunjuk.png'); 
         
-        // PALET KOREA: Cuma Merah, Biru, Putih (Hitam gak perlu karena magic reveal)
-        this.load.image('paletMerah', 'asset/paletmerah.png'); 
+        // PALET INDIA: Oranye, Putih, Hijau
+        this.load.image('paletOrange', 'asset/paletorange.png'); // Aset baru nih!
         this.load.image('paletPutih', 'asset/paletputih.png');
-        this.load.image('paletBiru', 'asset/paletbiru.png'); 
+        this.load.image('paletHijau', 'asset/palethijau.png'); 
 
         this.load.image('bgKuas', 'asset/penampungkuas.png');
         this.load.image('gagangKuas', 'asset/gagang_kuas.png'); 
@@ -23,13 +23,11 @@ class gameplayScene6 extends Phaser.Scene {
         this.load.image('btnReplay', 'asset/ulang.png');
         this.load.image('btnNext', 'asset/next.png');
         
-        this.load.image('flagwin_lvl6', 'asset/flagwin_lvl6.png');
+        this.load.image('flagwin_lvl13', 'asset/flagwin_lvl13.png');
         
-        // ASET KOREA SELATAN DARI FIGMA LU
-        this.load.image('korea_atas', 'asset/korea_atas.png');
-        this.load.image('korea_bawah', 'asset/korea_bawah.png');
-        this.load.image('korea_garis_outline', 'asset/korea_garis_outline.png'); // Garis doang
-        this.load.image('korea_garis_solid', 'asset/korea_garis_solid.png');     // Hitam padat (Magic Reveal)
+        // ASET LOGO INDIA (Garis doang & Full Color Biru)
+        this.load.image('india_logo_garis', 'asset/india_logo_garis.png');
+        this.load.image('india_logo_warna', 'asset/india_logo_warna.png');
 
         this.load.image('loseText', 'asset/tulisan_kalah.png');
         this.load.image('iconX', 'asset/x.png');
@@ -70,27 +68,29 @@ class gameplayScene6 extends Phaser.Scene {
         this.usedHintQuestions = [];
         this.usedFlagHints = []; 
 
-        this.colorVibrantRed = 0xD9252B;
-        this.colorVibrantBlue = 0x0055A4;
-        this.colorVibrantWhite = 0xFFFFFF;
+        // Definisi Warna India
+        this.colorOrange = 0xFF9933; // Oranye Saffron
+        this.colorWhite = 0xFFFFFF;  // Putih
+        this.colorGreen = 0x138808;  // Hijau India
 
-        // JAWABAN BENAR KOREA SELATAN (Trigram hitam otomatis, jadi gak dinilai warna kuasnya)
+        // JAWABAN BENAR INDIA
         this.flagAnswers = [
-            { text:"PUTIH DI BAGIAN LATAR BENDERA", bg: this.colorVibrantWhite },
-            { text:"MERAH DI LENGKUNGAN ATAS", top: this.colorVibrantRed },
-            { text:"BIRU DI LENGKUNGAN BAWAH", bottom: this.colorVibrantBlue }
+            { text:"ORANYE DI BAGIAN ATAS", top: this.colorOrange },
+            { text:"PUTIH DI BAGIAN TENGAH", mid: this.colorWhite },
+            { text:"HIJAU DI BAGIAN BAWAH", bottom: this.colorGreen } 
         ];
 
         let hintData = localStorage.getItem('hintData');
         this.hintCount = hintData === null ? 2 : parseInt(hintData);
         if (hintData === null) localStorage.setItem('hintData', 2);
 
+        // BANK SOAL INDIA
         this.hintQuestions = [
-            {q:"Apa ibu kota Korea Selatan?",a:"Pyongyang",b:"Seoul",c:"Tokyo",d:"Beijing",correct:"b"},
-            {q:"Musik pop dari Korea disebut?",a:"J-Pop",b:"K-Pop",c:"Indo-Pop",d:"C-Pop",correct:"b"},
-            {q:"Makanan fermentasi sayur khas Korea yang pedas?",a:"Sushi",b:"Kimchi",c:"Ramen",d:"Tom Yum",correct:"b"},
-            {q:"Pakaian tradisional Korea Selatan disebut?",a:"Kimono",b:"Hanbok",c:"Cheongsam",d:"Batik",correct:"b"},
-            {q:"Mata uang Korea Selatan adalah?",a:"Yen",b:"Yuan",c:"Won",d:"Ringgit",correct:"c"}
+            {q:"Apa ibu kota negara India?",a:"Mumbai",b:"New Delhi",c:"Kolkata",d:"Bangalore",correct:"b"},
+            {q:"Bangunan keajaiban dunia yang ada di India adalah?",a:"Taj Mahal",b:"Piramida",c:"Menara Eiffel",d:"Tembok Besar",correct:"a"},
+            {q:"Industri perfilman terkenal dari India disebut?",a:"Hollywood",b:"Nollywood",c:"Bollywood",d:"Tollywood",correct:"c"},
+            {q:"Apa mata uang negara India?",a:"Rupee",b:"Rupiah",c:"Baht",d:"Yen",correct:"a"},
+            {q:"India terletak di benua apa?",a:"Afrika",b:"Eropa",c:"Australia",d:"Asia",correct:"d"}
         ];
 
         const { width, height } = this.scale;
@@ -100,69 +100,72 @@ class gameplayScene6 extends Phaser.Scene {
         const boardY = height / 2 + 13; 
         const flagW = 512; 
         const flagH = 306; 
+        
+        // RUMUS INDIA: Dibagi 3 horizontal rata
+        const stripeH = flagH / 3; 
 
         this.selectedColor = null; 
         this.isAnimating = false; 
 
-        // FUNGSI ARSIRAN YANG RAPI
-        const createStripes = (x, y, w, h, maskKey = null) => {
+        const createStripes = (x, y, w, h) => {
             const graphics = this.add.graphics();
             graphics.lineStyle(2, 0xAAAAAA, 0.5); 
-            for (let i = -512; i < 512 + 306; i += 15) { 
+            for (let i = -w; i < w + h; i += 15) { 
                 graphics.beginPath();
-                graphics.moveTo(x - 512/2 + i, y - 306/2);
-                graphics.lineTo(x - 512/2 + i - 306, y + 306/2);
+                graphics.moveTo(x - w/2 + i, y - h/2);
+                graphics.lineTo(x - w/2 + i - h, y + h/2);
                 graphics.strokePath();
             }
-            if (maskKey) {
-                const maskImg = this.make.image({ x: x, y: y, key: maskKey, add: false });
-                graphics.setMask(maskImg.createBitmapMask());
-            } else {
-                const maskShape = this.make.graphics();
-                maskShape.fillStyle(0xffffff);
-                maskShape.fillRect(x - w/2, y - h/2, w, h);
-                graphics.setMask(maskShape.createGeometryMask());
-            }
+            const maskShape = this.make.graphics();
+            maskShape.fillStyle(0xffffff);
+            maskShape.fillRect(x - w/2, y - h/2, w, h);
+            graphics.setMask(maskShape.createGeometryMask());
             return graphics;
         };
 
-        // ================= PENYUSUNAN LAYER ================= //
-        
-        // 1. ZONA BACKGROUND KOTAK (Ini yang bakal mantik Magic Reveal)
-        const stripesBg = createStripes(boardX, boardY, flagW, flagH).setDepth(11);
-        const zoneBg = this.add.rectangle(boardX, boardY, flagW, flagH, 0xFFFFFF)
+        // ================= PENYUSUNAN LAYER BENDERA INDIA ================= //
+
+        // ATAS (Oranye)
+        const topY = boardY - stripeH;
+        const stripesTop = createStripes(boardX, topY, flagW, stripeH).setDepth(11);
+        const zoneTop = this.add.rectangle(boardX, topY, flagW, stripeH, 0xFFFFFF)
             .setInteractive({ useHandCursor: true }).setAlpha(0.01).setDepth(10); 
 
-        // 2. ZONA TAEGEUK ATAS (Hitbox Merah)
-        const stripesAtas = createStripes(boardX, boardY, flagW, flagH, 'korea_atas').setDepth(16);
-        const zoneAtas = this.add.image(boardX, boardY, 'korea_atas')
-            .setInteractive({ pixelPerfect: true }).setAlpha(0.01).setDepth(15);
+        // TENGAH (Putih - Tempat Logo)
+        const midY = boardY;
+        const stripesMid = createStripes(boardX, midY, flagW, stripeH).setDepth(11);
+        const zoneMid = this.add.rectangle(boardX, midY, flagW, stripeH, 0xFFFFFF)
+            .setInteractive({ useHandCursor: true }).setAlpha(0.01).setDepth(10); 
 
-        // 3. ZONA TAEGEUK BAWAH (Hitbox Biru)
-        const stripesBawah = createStripes(boardX, boardY, flagW, flagH, 'korea_bawah').setDepth(16);
-        const zoneBawah = this.add.image(boardX, boardY, 'korea_bawah')
-            .setInteractive({ pixelPerfect: true }).setAlpha(0.01).setDepth(15);
+        // BAWAH (Hijau)
+        const bottomY = boardY + stripeH;
+        const stripesBottom = createStripes(boardX, bottomY, flagW, stripeH).setDepth(11);
+        const zoneBottom = this.add.rectangle(boardX, bottomY, flagW, stripeH, 0xFFFFFF)
+            .setInteractive({ useHandCursor: true }).setAlpha(0.01).setDepth(10); 
 
-        // 4. LOGO TRIGRAM MAGIC REVEAL (Sembunyi dulu, Alpha = 0)
-        this.trigramSolid = this.add.image(boardX, boardY, 'korea_garis_solid').setDepth(18).setAlpha(0).disableInteractive();
+        // LOGO INDIA EFEK MAGIC
+        // Layer 1: Logo Berwarna Biru (Sembunyi dulu, Alpha = 0)
+        this.logoWarna = this.add.image(boardX, boardY, 'india_logo_warna').setDepth(16).setAlpha(0).disableInteractive();
+        
+        // Layer 2: Logo Garis Hitam (Nongol terus)
+        this.logoGaris = this.add.image(boardX, boardY, 'india_logo_garis').setDepth(20).disableInteractive();
 
-        // 5. GARIS OUTLINE (Ini nongol terus di atas)
-        this.add.image(boardX, boardY, 'korea_garis_outline').setDepth(20).disableInteractive();
-
-        // Outline Kotak Utama Bendera
+        // OUTLINE & GARIS PEMISAH HORIZONTAL
+        this.add.rectangle(boardX, boardY - stripeH/2, flagW, 3, 0x000000).setDepth(21);
+        this.add.rectangle(boardX, boardY + stripeH/2, flagW, 3, 0x000000).setDepth(21);
         this.add.rectangle(boardX, boardY, flagW, flagH).setStrokeStyle(3, 0x000000).setDepth(21);
 
         this.add.image(width - 185, height - 95, 'bgKuas').setScale(0.7);
         const gagang = this.add.image(0, 0, 'gagangKuas');
         this.bulu = this.add.image(0, 0, 'buluKuas'); 
-        this.brushContainer = this.add.container(width - 185, height - 100, [gagang, this.bulu]).setScale(0.2).setDepth(40);
+        this.brushContainer = this.add.container(width - 185, height - 100, [gagang, this.bulu]).setScale(0.2).setDepth(30);
 
-        // LOGIKA MEWARNAI (Ditambahin isBgZone buat mendeteksi Background)
-        const paintZone = (zone, isImage = false, stripesToDestroy = null, isBgZone = false) => {
+        // LOGIKA MEWARNAI DENGAN MAGIC REVEAL LOGO
+        const paintZone = (zone, stripesToDestroy = null, isMidZone = false) => {
             if (this.gameOver || this.isAnimating) return;
 
             if (this.selectedColor === null) {
-                this.tweens.add({ targets: zone, scale: 1.05, duration: 50, yoyo: true, repeat: 3 });
+                this.tweens.add({ targets: zone, x: zone.x + 5, duration: 50, yoyo: true, repeat: 3 });
                 return;
             }
 
@@ -173,27 +176,17 @@ class gameplayScene6 extends Phaser.Scene {
             this.isAnimating = true; 
 
             const paintColor = this.selectedColor; 
-            const paintGraphics = this.add.graphics().setDepth(zone.depth + 1);
+            const paintGraphics = this.add.graphics().setDepth(15);
             
-            let startX, startY, zoneW, zoneH;
+            const maskShapeLocal = this.make.graphics();
+            maskShapeLocal.fillStyle(0xffffff);
+            maskShapeLocal.fillRect(zone.x - zone.width/2, zone.y - zone.height/2, zone.width, zone.height);
+            paintGraphics.setMask(maskShapeLocal.createGeometryMask());
 
-            if (isImage) {
-                const maskImage = this.make.image({ x: zone.x, y: zone.y, key: zone.texture.key, add: false });
-                paintGraphics.setMask(maskImage.createBitmapMask());
-                startX = zone.x - flagW/2;
-                startY = zone.y;
-                zoneW = flagW;
-                zoneH = flagH;
-            } else {
-                const maskShapeLocal = this.make.graphics();
-                maskShapeLocal.fillStyle(0xffffff);
-                maskShapeLocal.fillRect(zone.x - zone.width/2, zone.y - zone.height/2, zone.width, zone.height);
-                paintGraphics.setMask(maskShapeLocal.createGeometryMask());
-                startX = zone.x - zone.width / 2;
-                startY = zone.y;
-                zoneW = zone.width;
-                zoneH = zone.height;
-            }
+            const startX = zone.x - zone.width / 2;
+            const startY = zone.y;
+            const zoneW = zone.width;
+            const zoneH = zone.height;
 
             this.tweens.add({
                 targets: this.brushContainer, x: startX + 50, y: startY, angle: -20, duration: 400, ease: 'Power2',
@@ -226,18 +219,15 @@ class gameplayScene6 extends Phaser.Scene {
 
                         if (stripesToDestroy && stripesToDestroy.active) stripesToDestroy.destroy();
                         
-                        if (isImage) { zone.setTint(paintColor); } 
-                        else { zone.setFillStyle(paintColor); }
+                        zone.setFillStyle(paintColor); 
                         zone.setAlpha(1);
 
-                        // --- LOGIKA MAGIC REVEAL (MUNCULIN GARIS HITAM) --- //
-                        if (isBgZone) {
-                            if (paintColor === this.colorVibrantWhite) {
-                                // JIKA Dikasih warna Putih, garis solid hitam muncul!
-                                this.tweens.add({ targets: this.trigramSolid, alpha: 1, duration: 500, ease: 'Power2' });
+                        // --- LOGIKA REVEAL LOGO INDIA --- //
+                        if (isMidZone) {
+                            if (paintColor === this.colorWhite) {
+                                this.tweens.add({ targets: this.logoWarna, alpha: 1, duration: 500, ease: 'Power2' });
                             } else {
-                                // Jika salah warna, garis hitam disembunyiin lagi
-                                this.trigramSolid.setAlpha(0); 
+                                this.logoWarna.setAlpha(0); 
                             }
                         }
                         
@@ -246,22 +236,16 @@ class gameplayScene6 extends Phaser.Scene {
                         zone.setData('isPainting', false);
                         this.isAnimating = false; 
 
-                        this.checkWinCondition(zoneBg, zoneAtas, zoneBawah);
+                        this.checkWinCondition(zoneTop, zoneMid, zoneBottom);
                     }
                 });
             };
         };
 
-        // EVENT KLIK (Parameter ke-4 = true khusus buat zona Background)
-        zoneBg.on('pointerdown', (p, x, y, event) => { 
-            event.stopPropagation(); paintZone(zoneBg, false, stripesBg, true); 
-        });
-        zoneAtas.on('pointerdown', (p, x, y, event) => { 
-            event.stopPropagation(); paintZone(zoneAtas, true, stripesAtas, false); 
-        });
-        zoneBawah.on('pointerdown', (p, x, y, event) => { 
-            event.stopPropagation(); paintZone(zoneBawah, true, stripesBawah, false); 
-        });
+        // EVENT KLIK (Parameter ke-3 = true khusus buat zona tengah)
+        zoneTop.on('pointerdown', () => { paintZone(zoneTop, stripesTop, false); });
+        zoneMid.on('pointerdown', () => { paintZone(zoneMid, stripesMid, true); });
+        zoneBottom.on('pointerdown', () => { paintZone(zoneBottom, stripesBottom, false); });
 
         // TOMBOL BACK
         const tombolback = this.add.image(width * 0.055, height * 0.080, 'tombolback').setScale(1).setInteractive({ useHandCursor: true });
@@ -270,32 +254,32 @@ class gameplayScene6 extends Phaser.Scene {
             this.tweens.add({ targets: tombolback, scale: 0.115, duration: 80, yoyo: true, onComplete: () => this.scene.start('level') });
         });
 
-        // PALET WARNA (Merah, Biru, Putih aja)
-        const pBiru = this.add.image(width - 90, height/2.1, 'paletBiru').setInteractive().setScale(0.8);
-        pBiru.on('pointerdown', () => {
+        // PALET WARNA INDIA (Orange, Putih, Hijau)
+        const pOrange = this.add.image(width - 90, height/2.1, 'paletOrange').setInteractive().setScale(0.8);
+        pOrange.on('pointerdown', () => {
             if (this.gameOver || this.isAnimating) return; 
             this.playGlobalSFX('pop', { volume: 0.6 }); 
-            this.selectedColor = this.colorVibrantBlue; this.updateBrushColor(this.colorVibrantBlue);
-            this.tweens.add({ targets: pBiru, scale: 0.9, duration: 100, yoyo: true });
+            this.selectedColor = this.colorOrange; this.updateBrushColor(this.colorOrange);
+            this.tweens.add({ targets: pOrange, scale: 0.9, duration: 100, yoyo: true });
         });
 
         const pPutih = this.add.image(width - 90, height/1.75, 'paletPutih').setInteractive().setScale(0.8);
         pPutih.on('pointerdown', () => {
             if (this.gameOver || this.isAnimating) return;
             this.playGlobalSFX('pop', { volume: 0.6 }); 
-            this.selectedColor = this.colorVibrantWhite; this.updateBrushColor(this.colorVibrantWhite);
+            this.selectedColor = this.colorWhite; this.updateBrushColor(this.colorWhite);
             this.tweens.add({ targets: pPutih, scale: 0.9, duration: 100, yoyo: true });
         });
 
-        const pMerah = this.add.image(width - 90, height/1.5, 'paletMerah').setInteractive().setScale(0.8);
-        pMerah.on('pointerdown', () => {
+        const pHijau = this.add.image(width - 90, height/1.5, 'paletHijau').setInteractive().setScale(0.8);
+        pHijau.on('pointerdown', () => {
             if (this.gameOver || this.isAnimating) return; 
             this.playGlobalSFX('pop', { volume: 0.6 }); 
-            this.selectedColor = this.colorVibrantRed; this.updateBrushColor(this.colorVibrantRed);
-            this.tweens.add({ targets: pMerah, scale: 0.9, duration: 100, yoyo: true });
+            this.selectedColor = this.colorGreen; this.updateBrushColor(this.colorGreen);
+            this.tweens.add({ targets: pHijau, scale: 0.9, duration: 100, yoyo: true });
         });
 
-        // KODE JUDUL NEGARA (Murni Kode)
+        // KODE JUDUL NEGARA
         const titleScale = 0.46; 
         const titleWidth = 650 * titleScale;
         const titleHeight = 60 * titleScale;
@@ -308,7 +292,7 @@ class gameplayScene6 extends Phaser.Scene {
         titleOuter.lineStyle(4 * titleScale, 0x000000);
         titleOuter.strokeRoundedRect(titleX - titleWidth/2, titleY - titleHeight/2, titleWidth, titleHeight, 25 * titleScale);
 
-        this.add.text(titleX, titleY, 'KOREA SELATAN', { fontSize: (32 * titleScale) + 'px', fontFamily: 'Arial', color: '#000000', fontStyle: 'bold' }).setOrigin(0.5);
+        this.add.text(titleX, titleY, 'INDIA', { fontSize: (32 * titleScale) + 'px', fontFamily: 'Arial', color: '#000000', fontStyle: 'bold' }).setOrigin(0.5);
 
         // TIMER
         const barX = width - 347, barY = 60, barWidth = 300 * 0.85, barHeight = 22 * 0.85;
@@ -335,14 +319,12 @@ class gameplayScene6 extends Phaser.Scene {
         timerFill.setMask(maskTimer);
 
         const timerData = { value: 1 };
-
         this.timerTween = this.tweens.add({
             targets: timerData, value: 0, duration: 20000, ease: 'Linear',
             onUpdate: () => {
                 timerFill.clear();
                 timerFill.fillStyle(0xF21B1B, 1);
                 timerFill.fillRoundedRect(barX, barY - barHeight/2, barWidth * timerData.value, barHeight, 12 * 0.85);
-
                 if (timerData.value <= 0.25 && !isJamPulsing) {
                     isJamPulsing = true; 
                     jamIcon.setTint(0xff4444); 
@@ -364,9 +346,10 @@ class gameplayScene6 extends Phaser.Scene {
 
     updateBrushColor(color) { this.bulu.setTint(color); }
 
-    checkWinCondition(zoneBg, zoneAtas, zoneBawah) {
+    checkWinCondition(zoneTop, zoneMid, zoneBottom) {
         if (this.gameOver) return;
-        if (zoneBg.getData('colorCode') === this.colorVibrantWhite && zoneAtas.getData('colorCode') === this.colorVibrantRed && zoneBawah.getData('colorCode') === this.colorVibrantBlue) {
+        // INDIA: Orange (Atas), Putih (Tengah), Hijau (Bawah)
+        if (zoneTop.getData('colorCode') === this.colorOrange && zoneMid.getData('colorCode') === this.colorWhite && zoneBottom.getData('colorCode') === this.colorGreen) {
             this.gameOver = true; 
             if (this.timerTween) this.timerTween.stop();
             this.time.delayedCall(500, () => { this.showWinScreen(); });
@@ -394,13 +377,13 @@ class gameplayScene6 extends Phaser.Scene {
             this.tweens.add({ targets: globalBgm, volume: 0.15, duration: 800, ease: 'Linear' });
         }
 
-        let rewardLevel6 = localStorage.getItem('rewardLevel6');
-        if(!rewardLevel6){
+        let rewardLevel13 = localStorage.getItem('rewardLevel13');
+        if(!rewardLevel13){
             let hintData = localStorage.getItem('hintData');
             let hint = hintData ? parseInt(hintData) : 0;
             hint += 1;
             localStorage.setItem('hintData', hint);
-            localStorage.setItem('rewardLevel6', true);
+            localStorage.setItem('rewardLevel13', true);
         }
 
         const { width, height } = this.scale;
@@ -420,7 +403,7 @@ class gameplayScene6 extends Phaser.Scene {
         }
 
         const title = this.add.image(bgX, bgY, 'winBG').setDepth(200).setScale(bgScale * 0.8).setAlpha(0);
-        const flag = this.add.image(flagX, flagY, 'flagwin_lvl6').setDepth(201).setScale(flagScale * 0.8).setAlpha(0);
+        const flag = this.add.image(flagX, flagY, 'flagwin_lvl13').setDepth(201).setScale(flagScale * 0.8).setAlpha(0);
         const replay = this.add.image(replayX, replayY, 'btnReplay').setInteractive({ useHandCursor: true }).setDepth(202).setScale(btnScale * 0.8).setAlpha(0);
         const home = this.add.image(homeX, homeY, 'btnHome').setInteractive({ useHandCursor: true }).setDepth(202).setScale(btnScale * 0.8).setAlpha(0);
         const next = this.add.image(nextX, nextY, 'btnNext').setInteractive({ useHandCursor: true }).setDepth(202).setScale(btnScale * 0.8).setAlpha(0);
@@ -440,14 +423,14 @@ class gameplayScene6 extends Phaser.Scene {
         const unlockNextLevel = () => {
             let levelDataStr = localStorage.getItem('levelData');
             let levelData = levelDataStr ? JSON.parse(levelDataStr) : {};
-            levelData[6] = 2; 
-            if (levelData[7] !== 2) levelData[7] = 1; 
+            levelData[13] = 2; 
+            if (levelData[14] !== 2) levelData[14] = 1; 
             localStorage.setItem('levelData', JSON.stringify(levelData));
         };
 
         replay.on('pointerdown', () => { unlockNextLevel(); this.scene.restart(); });
         home.on('pointerdown', () => { unlockNextLevel(); this.scene.start('level'); });
-        next.on('pointerdown', () => { unlockNextLevel(); this.scene.start('gameplay7'); });
+        next.on('pointerdown', () => { unlockNextLevel(); this.scene.start('gameplay14'); }); // Lanjut Level 14
     }
 
     showLoseScreen() {
@@ -618,8 +601,8 @@ class gameplayScene6 extends Phaser.Scene {
             if (this.timerTween) this.timerTween.resume();
         });
 
-        if(hint.bg){ this.selectedColor = hint.bg; this.updateBrushColor(hint.bg); }
         if(hint.top){ this.selectedColor = hint.top; this.updateBrushColor(hint.top); }
+        if(hint.mid){ this.selectedColor = hint.mid; this.updateBrushColor(hint.mid); }
         if(hint.bottom){ this.selectedColor = hint.bottom; this.updateBrushColor(hint.bottom); }
     }
 

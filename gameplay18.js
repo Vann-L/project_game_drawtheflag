@@ -1,6 +1,6 @@
-class gameplayScene6 extends Phaser.Scene {
+class gameplayScene18 extends Phaser.Scene {
     constructor() {
-        super('gameplay6');
+        super('gameplay18');
     }
 
     preload() {
@@ -8,9 +8,9 @@ class gameplayScene6 extends Phaser.Scene {
         this.load.image('btnBack', 'asset/tombolback.png');
         this.load.image('btnHint', 'asset/petunjuk.png'); 
         
-        // PALET KOREA: Cuma Merah, Biru, Putih (Hitam gak perlu karena magic reveal)
+        // PALET AMERIKA: Merah, Putih, Biru 
         this.load.image('paletMerah', 'asset/paletmerah.png'); 
-        this.load.image('paletPutih', 'asset/paletputih.png');
+        this.load.image('paletPutih', 'asset/paletputih.png'); 
         this.load.image('paletBiru', 'asset/paletbiru.png'); 
 
         this.load.image('bgKuas', 'asset/penampungkuas.png');
@@ -23,13 +23,13 @@ class gameplayScene6 extends Phaser.Scene {
         this.load.image('btnReplay', 'asset/ulang.png');
         this.load.image('btnNext', 'asset/next.png');
         
-        this.load.image('flagwin_lvl6', 'asset/flagwin_lvl6.png');
+        this.load.image('flagwin_lvl18', 'asset/flagwin_lvl18.png');
         
-        // ASET KOREA SELATAN DARI FIGMA LU
-        this.load.image('korea_atas', 'asset/korea_atas.png');
-        this.load.image('korea_bawah', 'asset/korea_bawah.png');
-        this.load.image('korea_garis_outline', 'asset/korea_garis_outline.png'); // Garis doang
-        this.load.image('korea_garis_solid', 'asset/korea_garis_solid.png');     // Hitam padat (Magic Reveal)
+        // ASET BENDERA AMERIKA DARI FIGMA LU
+        this.load.image('us_stripes', 'asset/us_stripes.png'); // 7 Garis Merah
+        this.load.image('us_canton', 'asset/us_canton.png');   // Kotak Biru Pojok Kiri Atas
+        this.load.image('us_stars', 'asset/us_stars.png');     // 50 Bintang Putih
+        this.load.image('us_garis', 'asset/us_garis.png');     // Garis Outline Hitam
 
         this.load.image('loseText', 'asset/tulisan_kalah.png');
         this.load.image('iconX', 'asset/x.png');
@@ -70,27 +70,29 @@ class gameplayScene6 extends Phaser.Scene {
         this.usedHintQuestions = [];
         this.usedFlagHints = []; 
 
-        this.colorVibrantRed = 0xD9252B;
-        this.colorVibrantBlue = 0x0055A4;
-        this.colorVibrantWhite = 0xFFFFFF;
+        // Definisi Warna Bendera Amerika
+        this.colorRed = 0xB22234;   // Merah Amerika
+        this.colorWhite = 0xFFFFFF; // Putih
+        this.colorBlue = 0x3C3B6E;  // Biru Navy Amerika
 
-        // JAWABAN BENAR KOREA SELATAN (Trigram hitam otomatis, jadi gak dinilai warna kuasnya)
+        // JAWABAN BENAR AMERIKA
         this.flagAnswers = [
-            { text:"PUTIH DI BAGIAN LATAR BENDERA", bg: this.colorVibrantWhite },
-            { text:"MERAH DI LENGKUNGAN ATAS", top: this.colorVibrantRed },
-            { text:"BIRU DI LENGKUNGAN BAWAH", bottom: this.colorVibrantBlue }
+            { text:"PUTIH SEBAGAI WARNA DASAR (BACKGROUND)", bg: this.colorWhite },
+            { text:"MERAH DI 7 GARIS STRIP", stripes: this.colorRed },
+            { text:"BIRU DI KOTAK POJOK KIRI ATAS", canton: this.colorBlue }
         ];
 
         let hintData = localStorage.getItem('hintData');
         this.hintCount = hintData === null ? 2 : parseInt(hintData);
         if (hintData === null) localStorage.setItem('hintData', 2);
 
+        // BANK SOAL AMERIKA SERIKAT
         this.hintQuestions = [
-            {q:"Apa ibu kota Korea Selatan?",a:"Pyongyang",b:"Seoul",c:"Tokyo",d:"Beijing",correct:"b"},
-            {q:"Musik pop dari Korea disebut?",a:"J-Pop",b:"K-Pop",c:"Indo-Pop",d:"C-Pop",correct:"b"},
-            {q:"Makanan fermentasi sayur khas Korea yang pedas?",a:"Sushi",b:"Kimchi",c:"Ramen",d:"Tom Yum",correct:"b"},
-            {q:"Pakaian tradisional Korea Selatan disebut?",a:"Kimono",b:"Hanbok",c:"Cheongsam",d:"Batik",correct:"b"},
-            {q:"Mata uang Korea Selatan adalah?",a:"Yen",b:"Yuan",c:"Won",d:"Ringgit",correct:"c"}
+            {q:"Apa ibu kota negara Amerika Serikat?",a:"New York",b:"Washington D.C.",c:"Los Angeles",d:"Chicago",correct:"b"},
+            {q:"Patung terkenal yang menjadi simbol Amerika Serikat adalah?",a:"Patung Liberty",b:"Patung Kristus Penebus",c:"Patung Merlion",d:"Patung Sphinx",correct:"a"},
+            {q:"Amerika Serikat terletak di benua apa?",a:"Eropa",b:"Australia",c:"Amerika Utara",d:"Amerika Selatan",correct:"c"},
+            {q:"Apa nama mata uang yang digunakan di Amerika Serikat?",a:"Euro",b:"Poundsterling",c:"Peso",d:"Dolar AS",correct:"d"},
+            {q:"Industri perfilman terbesar di dunia yang berada di Amerika disebut?",a:"Bollywood",b:"Hollywood",c:"Nollywood",d:"Tollywood",correct:"b"}
         ];
 
         const { width, height } = this.scale;
@@ -104,7 +106,7 @@ class gameplayScene6 extends Phaser.Scene {
         this.selectedColor = null; 
         this.isAnimating = false; 
 
-        // FUNGSI ARSIRAN YANG RAPI
+        // Fungsi Arsiran Pola Default
         const createStripes = (x, y, w, h, maskKey = null) => {
             const graphics = this.add.graphics();
             graphics.lineStyle(2, 0xAAAAAA, 0.5); 
@@ -126,43 +128,41 @@ class gameplayScene6 extends Phaser.Scene {
             return graphics;
         };
 
-        // ================= PENYUSUNAN LAYER ================= //
-        
-        // 1. ZONA BACKGROUND KOTAK (Ini yang bakal mantik Magic Reveal)
+        // ================= PENYUSUNAN LAYER BENDERA AMERIKA ================= //
+
+        // 1. ZONA BACKGROUND (Mewakili Garis Putih) - Lapisan Paling Bawah
         const stripesBg = createStripes(boardX, boardY, flagW, flagH).setDepth(11);
         const zoneBg = this.add.rectangle(boardX, boardY, flagW, flagH, 0xFFFFFF)
             .setInteractive({ useHandCursor: true }).setAlpha(0.01).setDepth(10); 
 
-        // 2. ZONA TAEGEUK ATAS (Hitbox Merah)
-        const stripesAtas = createStripes(boardX, boardY, flagW, flagH, 'korea_atas').setDepth(16);
-        const zoneAtas = this.add.image(boardX, boardY, 'korea_atas')
-            .setInteractive({ pixelPerfect: true }).setAlpha(0.01).setDepth(15);
+        // 2. ZONA GARIS MERAH (7 Garis) - Numpuk di atas Background
+        const stripesLine = createStripes(boardX, boardY, flagW, flagH, 'us_stripes').setDepth(13);
+        const zoneLine = this.add.image(boardX, boardY, 'us_stripes')
+            .setInteractive({ pixelPerfect: true }).setAlpha(0.01).setDepth(12);
 
-        // 3. ZONA TAEGEUK BAWAH (Hitbox Biru)
-        const stripesBawah = createStripes(boardX, boardY, flagW, flagH, 'korea_bawah').setDepth(16);
-        const zoneBawah = this.add.image(boardX, boardY, 'korea_bawah')
-            .setInteractive({ pixelPerfect: true }).setAlpha(0.01).setDepth(15);
+        // 3. ZONA KOTAK BIRU (Canton) - Numpuk di pojok kiri atas
+        const stripesCanton = createStripes(boardX, boardY, flagW, flagH, 'us_canton').setDepth(15);
+        const zoneCanton = this.add.image(boardX, boardY, 'us_canton')
+            .setInteractive({ pixelPerfect: true }).setAlpha(0.01).setDepth(14);
 
-        // 4. LOGO TRIGRAM MAGIC REVEAL (Sembunyi dulu, Alpha = 0)
-        this.trigramSolid = this.add.image(boardX, boardY, 'korea_garis_solid').setDepth(18).setAlpha(0).disableInteractive();
-
-        // 5. GARIS OUTLINE (Ini nongol terus di atas)
-        this.add.image(boardX, boardY, 'korea_garis_outline').setDepth(20).disableInteractive();
-
-        // Outline Kotak Utama Bendera
+        // 4. BINTANG-BINTANG (MAGIC REVEAL) - Muncul pas kotak diwarnain biru
+        this.logoStars = this.add.image(boardX, boardY, 'us_stars').setDepth(16).setAlpha(0).disableInteractive();
+        
+        // 5. GARIS OUTLINE (Paling atas)
+        this.add.image(boardX, boardY, 'us_garis').setDepth(20).disableInteractive();
         this.add.rectangle(boardX, boardY, flagW, flagH).setStrokeStyle(3, 0x000000).setDepth(21);
 
         this.add.image(width - 185, height - 95, 'bgKuas').setScale(0.7);
         const gagang = this.add.image(0, 0, 'gagangKuas');
         this.bulu = this.add.image(0, 0, 'buluKuas'); 
-        this.brushContainer = this.add.container(width - 185, height - 100, [gagang, this.bulu]).setScale(0.2).setDepth(40);
+        this.brushContainer = this.add.container(width - 185, height - 100, [gagang, this.bulu]).setScale(0.2).setDepth(30);
 
-        // LOGIKA MEWARNAI (Ditambahin isBgZone buat mendeteksi Background)
-        const paintZone = (zone, isImage = false, stripesToDestroy = null, isBgZone = false) => {
+        // LOGIKA MEWARNAI (Ditambah deteksi isCantonZone buat magic reveal)
+        const paintZone = (zone, isImage = false, stripesToDestroy = null, isCantonZone = false) => {
             if (this.gameOver || this.isAnimating) return;
 
             if (this.selectedColor === null) {
-                this.tweens.add({ targets: zone, scale: 1.05, duration: 50, yoyo: true, repeat: 3 });
+                this.tweens.add({ targets: zone, x: zone.x + 5, duration: 50, yoyo: true, repeat: 3 });
                 return;
             }
 
@@ -180,19 +180,13 @@ class gameplayScene6 extends Phaser.Scene {
             if (isImage) {
                 const maskImage = this.make.image({ x: zone.x, y: zone.y, key: zone.texture.key, add: false });
                 paintGraphics.setMask(maskImage.createBitmapMask());
-                startX = zone.x - flagW/2;
-                startY = zone.y;
-                zoneW = flagW;
-                zoneH = flagH;
+                startX = zone.x - flagW/2; startY = zone.y; zoneW = flagW; zoneH = flagH;
             } else {
                 const maskShapeLocal = this.make.graphics();
                 maskShapeLocal.fillStyle(0xffffff);
                 maskShapeLocal.fillRect(zone.x - zone.width/2, zone.y - zone.height/2, zone.width, zone.height);
                 paintGraphics.setMask(maskShapeLocal.createGeometryMask());
-                startX = zone.x - zone.width / 2;
-                startY = zone.y;
-                zoneW = zone.width;
-                zoneH = zone.height;
+                startX = zone.x - zone.width / 2; startY = zone.y; zoneW = zone.width; zoneH = zone.height;
             }
 
             this.tweens.add({
@@ -214,8 +208,10 @@ class gameplayScene6 extends Phaser.Scene {
                         const currentX = startX + (animData.progress * zoneW);
                         const wobble = Math.sin(animData.progress * 15) * 10;
                         const currentY = startY + wobble;
+                        
                         paintGraphics.fillRect(startX, startY - zoneH/2 - 10, (currentX - startX), zoneH + 20);
                         paintGraphics.fillCircle(currentX, currentY, zoneH / 2 + 10);
+                        
                         this.brushContainer.x = currentX + 30;
                         this.brushContainer.y = currentY - 40;
                         this.brushContainer.setAngle(-20 + Math.cos(animData.progress * 20) * 10);
@@ -230,38 +226,30 @@ class gameplayScene6 extends Phaser.Scene {
                         else { zone.setFillStyle(paintColor); }
                         zone.setAlpha(1);
 
-                        // --- LOGIKA MAGIC REVEAL (MUNCULIN GARIS HITAM) --- //
-                        if (isBgZone) {
-                            if (paintColor === this.colorVibrantWhite) {
-                                // JIKA Dikasih warna Putih, garis solid hitam muncul!
-                                this.tweens.add({ targets: this.trigramSolid, alpha: 1, duration: 500, ease: 'Power2' });
+                        // --- LOGIKA REVEAL BINTANG (MAGIC REVEAL) --- //
+                        if (isCantonZone) {
+                            if (paintColor === this.colorBlue) {
+                                this.tweens.add({ targets: this.logoStars, alpha: 1, duration: 500, ease: 'Power2' });
                             } else {
-                                // Jika salah warna, garis hitam disembunyiin lagi
-                                this.trigramSolid.setAlpha(0); 
+                                this.logoStars.setAlpha(0); 
                             }
                         }
-                        
+
                         paintGraphics.destroy();
                         zone.setData('colorCode', paintColor);
                         zone.setData('isPainting', false);
                         this.isAnimating = false; 
 
-                        this.checkWinCondition(zoneBg, zoneAtas, zoneBawah);
+                        this.checkWinCondition(zoneBg, zoneLine, zoneCanton);
                     }
                 });
             };
         };
 
-        // EVENT KLIK (Parameter ke-4 = true khusus buat zona Background)
-        zoneBg.on('pointerdown', (p, x, y, event) => { 
-            event.stopPropagation(); paintZone(zoneBg, false, stripesBg, true); 
-        });
-        zoneAtas.on('pointerdown', (p, x, y, event) => { 
-            event.stopPropagation(); paintZone(zoneAtas, true, stripesAtas, false); 
-        });
-        zoneBawah.on('pointerdown', (p, x, y, event) => { 
-            event.stopPropagation(); paintZone(zoneBawah, true, stripesBawah, false); 
-        });
+        // EVENT KLIK 
+        zoneBg.on('pointerdown', (p, x, y, event) => { event.stopPropagation(); paintZone(zoneBg, false, stripesBg, false); });
+        zoneLine.on('pointerdown', (p, x, y, event) => { event.stopPropagation(); paintZone(zoneLine, true, stripesLine, false); });
+        zoneCanton.on('pointerdown', (p, x, y, event) => { event.stopPropagation(); paintZone(zoneCanton, true, stripesCanton, true); });
 
         // TOMBOL BACK
         const tombolback = this.add.image(width * 0.055, height * 0.080, 'tombolback').setScale(1).setInteractive({ useHandCursor: true });
@@ -270,32 +258,32 @@ class gameplayScene6 extends Phaser.Scene {
             this.tweens.add({ targets: tombolback, scale: 0.115, duration: 80, yoyo: true, onComplete: () => this.scene.start('level') });
         });
 
-        // PALET WARNA (Merah, Biru, Putih aja)
-        const pBiru = this.add.image(width - 90, height/2.1, 'paletBiru').setInteractive().setScale(0.8);
-        pBiru.on('pointerdown', () => {
+        // PALET WARNA (Merah, Putih, Biru)
+        const pMerah = this.add.image(width - 90, height/2.1, 'paletMerah').setInteractive().setScale(0.8);
+        pMerah.on('pointerdown', () => {
             if (this.gameOver || this.isAnimating) return; 
             this.playGlobalSFX('pop', { volume: 0.6 }); 
-            this.selectedColor = this.colorVibrantBlue; this.updateBrushColor(this.colorVibrantBlue);
-            this.tweens.add({ targets: pBiru, scale: 0.9, duration: 100, yoyo: true });
+            this.selectedColor = this.colorRed; this.updateBrushColor(this.colorRed);
+            this.tweens.add({ targets: pMerah, scale: 0.9, duration: 100, yoyo: true });
         });
 
         const pPutih = this.add.image(width - 90, height/1.75, 'paletPutih').setInteractive().setScale(0.8);
         pPutih.on('pointerdown', () => {
             if (this.gameOver || this.isAnimating) return;
             this.playGlobalSFX('pop', { volume: 0.6 }); 
-            this.selectedColor = this.colorVibrantWhite; this.updateBrushColor(this.colorVibrantWhite);
+            this.selectedColor = this.colorWhite; this.updateBrushColor(this.colorWhite);
             this.tweens.add({ targets: pPutih, scale: 0.9, duration: 100, yoyo: true });
         });
 
-        const pMerah = this.add.image(width - 90, height/1.5, 'paletMerah').setInteractive().setScale(0.8);
-        pMerah.on('pointerdown', () => {
+        const pBiru = this.add.image(width - 90, height/1.5, 'paletBiru').setInteractive().setScale(0.8);
+        pBiru.on('pointerdown', () => {
             if (this.gameOver || this.isAnimating) return; 
             this.playGlobalSFX('pop', { volume: 0.6 }); 
-            this.selectedColor = this.colorVibrantRed; this.updateBrushColor(this.colorVibrantRed);
-            this.tweens.add({ targets: pMerah, scale: 0.9, duration: 100, yoyo: true });
+            this.selectedColor = this.colorBlue; this.updateBrushColor(this.colorBlue);
+            this.tweens.add({ targets: pBiru, scale: 0.9, duration: 100, yoyo: true });
         });
 
-        // KODE JUDUL NEGARA (Murni Kode)
+        // KODE JUDUL NEGARA
         const titleScale = 0.46; 
         const titleWidth = 650 * titleScale;
         const titleHeight = 60 * titleScale;
@@ -308,7 +296,7 @@ class gameplayScene6 extends Phaser.Scene {
         titleOuter.lineStyle(4 * titleScale, 0x000000);
         titleOuter.strokeRoundedRect(titleX - titleWidth/2, titleY - titleHeight/2, titleWidth, titleHeight, 25 * titleScale);
 
-        this.add.text(titleX, titleY, 'KOREA SELATAN', { fontSize: (32 * titleScale) + 'px', fontFamily: 'Arial', color: '#000000', fontStyle: 'bold' }).setOrigin(0.5);
+        this.add.text(titleX, titleY, 'AMERIKA SERIKAT', { fontSize: (28 * titleScale) + 'px', fontFamily: 'Arial', color: '#000000', fontStyle: 'bold' }).setOrigin(0.5);
 
         // TIMER
         const barX = width - 347, barY = 60, barWidth = 300 * 0.85, barHeight = 22 * 0.85;
@@ -335,14 +323,12 @@ class gameplayScene6 extends Phaser.Scene {
         timerFill.setMask(maskTimer);
 
         const timerData = { value: 1 };
-
         this.timerTween = this.tweens.add({
             targets: timerData, value: 0, duration: 20000, ease: 'Linear',
             onUpdate: () => {
                 timerFill.clear();
                 timerFill.fillStyle(0xF21B1B, 1);
                 timerFill.fillRoundedRect(barX, barY - barHeight/2, barWidth * timerData.value, barHeight, 12 * 0.85);
-
                 if (timerData.value <= 0.25 && !isJamPulsing) {
                     isJamPulsing = true; 
                     jamIcon.setTint(0xff4444); 
@@ -364,9 +350,10 @@ class gameplayScene6 extends Phaser.Scene {
 
     updateBrushColor(color) { this.bulu.setTint(color); }
 
-    checkWinCondition(zoneBg, zoneAtas, zoneBawah) {
+    checkWinCondition(zoneBg, zoneLine, zoneCanton) {
         if (this.gameOver) return;
-        if (zoneBg.getData('colorCode') === this.colorVibrantWhite && zoneAtas.getData('colorCode') === this.colorVibrantRed && zoneBawah.getData('colorCode') === this.colorVibrantBlue) {
+        // AMERIKA: Latar Putih, Garis Merah, Kotak Biru
+        if (zoneBg.getData('colorCode') === this.colorWhite && zoneLine.getData('colorCode') === this.colorRed && zoneCanton.getData('colorCode') === this.colorBlue) {
             this.gameOver = true; 
             if (this.timerTween) this.timerTween.stop();
             this.time.delayedCall(500, () => { this.showWinScreen(); });
@@ -394,13 +381,13 @@ class gameplayScene6 extends Phaser.Scene {
             this.tweens.add({ targets: globalBgm, volume: 0.15, duration: 800, ease: 'Linear' });
         }
 
-        let rewardLevel6 = localStorage.getItem('rewardLevel6');
-        if(!rewardLevel6){
+        let rewardLevel18 = localStorage.getItem('rewardLevel18');
+        if(!rewardLevel18){
             let hintData = localStorage.getItem('hintData');
             let hint = hintData ? parseInt(hintData) : 0;
             hint += 1;
             localStorage.setItem('hintData', hint);
-            localStorage.setItem('rewardLevel6', true);
+            localStorage.setItem('rewardLevel18', true);
         }
 
         const { width, height } = this.scale;
@@ -420,7 +407,7 @@ class gameplayScene6 extends Phaser.Scene {
         }
 
         const title = this.add.image(bgX, bgY, 'winBG').setDepth(200).setScale(bgScale * 0.8).setAlpha(0);
-        const flag = this.add.image(flagX, flagY, 'flagwin_lvl6').setDepth(201).setScale(flagScale * 0.8).setAlpha(0);
+        const flag = this.add.image(flagX, flagY, 'flagwin_lvl18').setDepth(201).setScale(flagScale * 0.8).setAlpha(0);
         const replay = this.add.image(replayX, replayY, 'btnReplay').setInteractive({ useHandCursor: true }).setDepth(202).setScale(btnScale * 0.8).setAlpha(0);
         const home = this.add.image(homeX, homeY, 'btnHome').setInteractive({ useHandCursor: true }).setDepth(202).setScale(btnScale * 0.8).setAlpha(0);
         const next = this.add.image(nextX, nextY, 'btnNext').setInteractive({ useHandCursor: true }).setDepth(202).setScale(btnScale * 0.8).setAlpha(0);
@@ -440,14 +427,14 @@ class gameplayScene6 extends Phaser.Scene {
         const unlockNextLevel = () => {
             let levelDataStr = localStorage.getItem('levelData');
             let levelData = levelDataStr ? JSON.parse(levelDataStr) : {};
-            levelData[6] = 2; 
-            if (levelData[7] !== 2) levelData[7] = 1; 
+            levelData[18] = 2; 
+            if (levelData[19] !== 2) levelData[19] = 1; 
             localStorage.setItem('levelData', JSON.stringify(levelData));
         };
 
         replay.on('pointerdown', () => { unlockNextLevel(); this.scene.restart(); });
         home.on('pointerdown', () => { unlockNextLevel(); this.scene.start('level'); });
-        next.on('pointerdown', () => { unlockNextLevel(); this.scene.start('gameplay7'); });
+        next.on('pointerdown', () => { unlockNextLevel(); this.scene.start('gameplay19'); }); // Lanjut Level 19 (Jerman)
     }
 
     showLoseScreen() {
@@ -549,7 +536,7 @@ class gameplayScene6 extends Phaser.Scene {
             return;
         }
 
-        let randomIndex = Phaser.Math.Between(0,availableQuestions.length-1);
+        let randomIndex = Math.floor(Math.random() * availableQuestions.length);
         let data = availableQuestions[randomIndex];
         this.usedHintQuestions.push(this.hintQuestions.indexOf(data));
 
@@ -601,7 +588,7 @@ class gameplayScene6 extends Phaser.Scene {
         let availableHints = this.flagAnswers.filter((h,i)=>{ return !this.usedFlagHints.includes(i); });
         if(availableHints.length === 0){ this.usedFlagHints = []; availableHints = this.flagAnswers; }
 
-        let randomIndex = Phaser.Math.Between(0, availableHints.length - 1);
+        let randomIndex = Math.floor(Math.random() * availableHints.length);
         let hint = availableHints[randomIndex];
         this.usedFlagHints.push(this.flagAnswers.indexOf(hint));
 
@@ -619,8 +606,8 @@ class gameplayScene6 extends Phaser.Scene {
         });
 
         if(hint.bg){ this.selectedColor = hint.bg; this.updateBrushColor(hint.bg); }
-        if(hint.top){ this.selectedColor = hint.top; this.updateBrushColor(hint.top); }
-        if(hint.bottom){ this.selectedColor = hint.bottom; this.updateBrushColor(hint.bottom); }
+        if(hint.stripes){ this.selectedColor = hint.stripes; this.updateBrushColor(hint.stripes); }
+        if(hint.canton){ this.selectedColor = hint.canton; this.updateBrushColor(hint.canton); }
     }
 
     showHintEmpty(){
