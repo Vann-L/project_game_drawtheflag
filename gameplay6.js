@@ -164,12 +164,15 @@ class gameplayScene6 extends Phaser.Scene {
         this.bulu = this.add.image(0, 0, 'buluKuas'); 
         this.brushContainer = this.add.container(width - 185, height - 100, [gagang, this.bulu]).setScale(0.2).setDepth(40);
 
-        // LOGIKA MEWARNAI (Ditambahin isBgZone buat mendeteksi Background)
+// LOGIKA MEWARNAI (FIXED POSISI & ANIMASI)
         const paintZone = (zone, isImage = false, stripesToDestroy = null, isBgZone = false) => {
             if (this.gameOver || this.isAnimating) return;
 
             if (this.selectedColor === null) {
-                this.tweens.add({ targets: zone, scale: 1.05, duration: 50, yoyo: true, repeat: 3 });
+                // Getarin objek dan arsirannya kalau belum pilih warna
+                let targetsToShake = [zone];
+                if (stripesToDestroy && stripesToDestroy.active) targetsToShake.push(stripesToDestroy);
+                this.tweens.add({ targets: targetsToShake, scale: 1.05, duration: 50, yoyo: true, repeat: 3 });
                 return;
             }
 
@@ -187,23 +190,43 @@ class gameplayScene6 extends Phaser.Scene {
             if (isImage) {
                 const maskImage = this.make.image({ x: zone.x, y: zone.y, key: zone.texture.key, add: false });
                 paintGraphics.setMask(maskImage.createBitmapMask());
-                startX = zone.x - flagW/2;
-                startY = zone.y;
-                zoneW = flagW;
-                zoneH = flagH;
+                
+                // --- FIX POSISI KUAS UNTUK LOGO TENGAH ---
+                let drawW = zone.width;
+                let drawH = zone.height;
+                let offsetY = 0; 
+                
+                // Kalau klik gambar Taegeuk (bukan background putih)
+                if (drawW > 400 && !isBgZone) {
+                    drawW = 180; 
+                    drawH = 180; 
+
+                    // Kalau zona bawah, sapuan kuas diturunin dikit biar pas
+                    if (zone.texture.key === 'korea_bawah') {
+                        offsetY = 85; 
+                    }
+                }
+
+                startX = zone.x - drawW / 2;
+                startY = zone.y + offsetY;
+                zoneW = drawW;
+                zoneH = drawH;
             } else {
+                // Masking buat kotak background
                 const maskShapeLocal = this.make.graphics();
                 maskShapeLocal.fillStyle(0xffffff);
                 maskShapeLocal.fillRect(zone.x - zone.width/2, zone.y - zone.height/2, zone.width, zone.height);
                 paintGraphics.setMask(maskShapeLocal.createGeometryMask());
+                
                 startX = zone.x - zone.width / 2;
                 startY = zone.y;
                 zoneW = zone.width;
                 zoneH = zone.height;
             }
 
+            // Samain koordinat melayang awal dengan titik mulai cat
             this.tweens.add({
-                targets: this.brushContainer, x: startX + 50, y: startY, angle: -20, duration: 400, ease: 'Power2',
+                targets: this.brushContainer, x: startX + 30, y: startY - 40, angle: -20, duration: 400, ease: 'Power2',
                 onComplete: () => { startPainting(); }
             });
 
@@ -221,15 +244,25 @@ class gameplayScene6 extends Phaser.Scene {
                         const currentX = startX + (animData.progress * zoneW);
                         const wobble = Math.sin(animData.progress * 15) * 10;
                         const currentY = startY + wobble;
+                        
                         paintGraphics.fillRect(startX, startY - zoneH/2 - 10, (currentX - startX), zoneH + 20);
                         paintGraphics.fillCircle(currentX, currentY, zoneH / 2 + 10);
+                        
                         this.brushContainer.x = currentX + 30;
                         this.brushContainer.y = currentY - 40;
                         this.brushContainer.setAngle(-20 + Math.cos(animData.progress * 20) * 10);
                     },
                     onComplete: () => {
                         sfx.stop();
-                        this.tweens.add({ targets: this.brushContainer, x: width - 185, y: height - 100, angle: 0, duration: 500, ease: 'Back.out' });
+                        
+                        // FIX: isAnimating ditaruh di sini biar pemain gak bisa spam klik pas kuas OTW balik
+                        this.tweens.add({ 
+                            targets: this.brushContainer, x: width - 185, y: height - 100, angle: 0, duration: 500, ease: 'Back.out',
+                            onComplete: () => {
+                                this.isAnimating = false; 
+                                this.checkWinCondition(zoneBg, zoneAtas, zoneBawah);
+                            }
+                        });
 
                         if (stripesToDestroy && stripesToDestroy.active) stripesToDestroy.destroy();
                         
@@ -240,10 +273,8 @@ class gameplayScene6 extends Phaser.Scene {
                         // --- LOGIKA MAGIC REVEAL (MUNCULIN GARIS HITAM) --- //
                         if (isBgZone) {
                             if (paintColor === this.colorVibrantWhite) {
-                                // JIKA Dikasih warna Putih, garis solid hitam muncul!
                                 this.tweens.add({ targets: this.trigramSolid, alpha: 1, duration: 500, ease: 'Power2' });
                             } else {
-                                // Jika salah warna, garis hitam disembunyiin lagi
                                 this.trigramSolid.setAlpha(0); 
                             }
                         }
@@ -251,9 +282,6 @@ class gameplayScene6 extends Phaser.Scene {
                         paintGraphics.destroy();
                         zone.setData('colorCode', paintColor);
                         zone.setData('isPainting', false);
-                        this.isAnimating = false; 
-
-                        this.checkWinCondition(zoneBg, zoneAtas, zoneBawah);
                     }
                 });
             };
