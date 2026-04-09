@@ -534,7 +534,7 @@ const config = {
   antialiasGL: true, 
   roundPixels: false, 
   // Urutan scene-nya didaftarin di sini (Menu paling awal)
- scene: [menuScene, creditScene, levelScene, gameplayScene1, gameplayScene2, gameplayScene3, gameplayScene4, gameplayScene5, gameplayScene6,  gameplayScene7, gameplayScene8, gameplayScene9, gameplayScene10, gameplayScene11, gameplayScene12,  gameplayScene13, gameplayScene14, gameplayScene15, gameplayScene16, gameplayScene17, gameplayScene18, gameplayScene19, gameplayScene20  ],
+ scene: [loadingScene, menuScene, creditScene, levelScene, gameplayScene1, gameplayScene2, gameplayScene3, gameplayScene4, gameplayScene5, gameplayScene6,  gameplayScene7, gameplayScene8, gameplayScene9, gameplayScene10, gameplayScene11, gameplayScene12,  gameplayScene13, gameplayScene14, gameplayScene15, gameplayScene16, gameplayScene17, gameplayScene18, gameplayScene19, gameplayScene20  ],
 };
 
 new Phaser.Game(config);
