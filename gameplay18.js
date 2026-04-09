@@ -25,7 +25,7 @@ class gameplayScene18 extends Phaser.Scene {
         
         this.load.image('flagwin_lvl18', 'asset/flagwin_lvl18.png');
         
-        // ASET BENDERA AMERIKA DARI FIGMA LU
+        // ASET BENDERA AMERIKA 
         this.load.image('us_stripes', 'asset/us_stripes.png'); // 7 Garis Merah
         this.load.image('us_canton', 'asset/us_canton.png');   // Kotak Biru Pojok Kiri Atas
         this.load.image('us_stars', 'asset/us_stars.png');     // 50 Bintang Putih
@@ -106,8 +106,8 @@ class gameplayScene18 extends Phaser.Scene {
         this.selectedColor = null; 
         this.isAnimating = false; 
 
-        // Fungsi Arsiran Pola Default
-        const createStripes = (x, y, w, h, maskKey = null) => {
+        // Fungsi Arsiran Pola Default (Dimodif biar bisa bikin lubang)
+        const createStripes = (x, y, w, h, maskKey = null, isBg = false) => {
             const graphics = this.add.graphics();
             graphics.lineStyle(2, 0xAAAAAA, 0.5); 
             for (let i = -512; i < 512 + 306; i += 15) { 
@@ -122,7 +122,32 @@ class gameplayScene18 extends Phaser.Scene {
             } else {
                 const maskShape = this.make.graphics();
                 maskShape.fillStyle(0xffffff);
-                maskShape.fillRect(x - w/2, y - h/2, w, h);
+                
+                if (isBg) {
+                    // Kotak Full Luar
+                    maskShape.beginPath();
+                    maskShape.moveTo(x - w/2, y - h/2);
+                    maskShape.lineTo(x + w/2, y - h/2);
+                    maskShape.lineTo(x + w/2, y + h/2);
+                    maskShape.lineTo(x - w/2, y + h/2);
+                    maskShape.closePath();
+                    
+                    // Lubangin area Canton di pojok kiri atas (berlawanan jarum jam)
+                    let cx = x - w/2;
+                    let cy = y - h/2;
+                    let cw = 205; // Perkiraan lebar canton
+                    let ch = 165; // Perkiraan tinggi canton
+                    maskShape.moveTo(cx, cy);
+                    maskShape.lineTo(cx, cy + ch);
+                    maskShape.lineTo(cx + cw, cy + ch);
+                    maskShape.lineTo(cx + cw, cy);
+                    maskShape.closePath();
+                    
+                    maskShape.fillPath();
+                } else {
+                    maskShape.fillRect(x - w/2, y - h/2, w, h);
+                }
+                
                 graphics.setMask(maskShape.createGeometryMask());
             }
             return graphics;
@@ -130,22 +155,41 @@ class gameplayScene18 extends Phaser.Scene {
 
         // ================= PENYUSUNAN LAYER BENDERA AMERIKA ================= //
 
-        // 1. ZONA BACKGROUND (Mewakili Garis Putih) - Lapisan Paling Bawah
-        const stripesBg = createStripes(boardX, boardY, flagW, flagH).setDepth(11);
+        // 1. ZONA BACKGROUND (Putih) - Sekarang dibolongin area cantonnya
+        const stripesBg = createStripes(boardX, boardY, flagW, flagH, null, true).setDepth(11);
         const zoneBg = this.add.rectangle(boardX, boardY, flagW, flagH, 0xFFFFFF)
             .setInteractive({ useHandCursor: true }).setAlpha(0.01).setDepth(10); 
 
-        // 2. ZONA GARIS MERAH (7 Garis) - Numpuk di atas Background
+        // Set masking permanen ke Background biar warna gak nembus ke Canton
+        const bgMaskShape = this.make.graphics();
+        bgMaskShape.fillStyle(0xffffff);
+        bgMaskShape.beginPath();
+        bgMaskShape.moveTo(boardX - flagW/2, boardY - flagH/2);
+        bgMaskShape.lineTo(boardX + flagW/2, boardY - flagH/2);
+        bgMaskShape.lineTo(boardX + flagW/2, boardY + flagH/2);
+        bgMaskShape.lineTo(boardX - flagW/2, boardY + flagH/2);
+        bgMaskShape.closePath();
+        let mcx = boardX - flagW/2;
+        let mcy = boardY - flagH/2;
+        bgMaskShape.moveTo(mcx, mcy);
+        bgMaskShape.lineTo(mcx, mcy + 165);
+        bgMaskShape.lineTo(mcx + 205, mcy + 165);
+        bgMaskShape.lineTo(mcx + 205, mcy);
+        bgMaskShape.closePath();
+        bgMaskShape.fillPath();
+        zoneBg.setMask(bgMaskShape.createGeometryMask());
+
+        // 2. ZONA GARIS MERAH (7 Garis)
         const stripesLine = createStripes(boardX, boardY, flagW, flagH, 'us_stripes').setDepth(13);
         const zoneLine = this.add.image(boardX, boardY, 'us_stripes')
             .setInteractive({ pixelPerfect: true }).setAlpha(0.01).setDepth(12);
 
-        // 3. ZONA KOTAK BIRU (Canton) - Numpuk di pojok kiri atas
+        // 3. ZONA KOTAK BIRU (Canton)
         const stripesCanton = createStripes(boardX, boardY, flagW, flagH, 'us_canton').setDepth(15);
         const zoneCanton = this.add.image(boardX, boardY, 'us_canton')
             .setInteractive({ pixelPerfect: true }).setAlpha(0.01).setDepth(14);
 
-        // 4. BINTANG-BINTANG (MAGIC REVEAL) - Muncul pas kotak diwarnain biru
+        // 4. BINTANG-BINTANG (MAGIC REVEAL)
         this.logoStars = this.add.image(boardX, boardY, 'us_stars').setDepth(16).setAlpha(0).disableInteractive();
         
         // 5. GARIS OUTLINE (Paling atas)
@@ -157,12 +201,14 @@ class gameplayScene18 extends Phaser.Scene {
         this.bulu = this.add.image(0, 0, 'buluKuas'); 
         this.brushContainer = this.add.container(width - 185, height - 100, [gagang, this.bulu]).setScale(0.2).setDepth(30);
 
-        // LOGIKA MEWARNAI (Ditambah deteksi isCantonZone buat magic reveal)
+        // LOGIKA MEWARNAI (FIXED)
         const paintZone = (zone, isImage = false, stripesToDestroy = null, isCantonZone = false) => {
             if (this.gameOver || this.isAnimating) return;
 
             if (this.selectedColor === null) {
-                this.tweens.add({ targets: zone, x: zone.x + 5, duration: 50, yoyo: true, repeat: 3 });
+                let targetsToShake = [zone];
+                if (stripesToDestroy && stripesToDestroy.active) targetsToShake.push(stripesToDestroy);
+                this.tweens.add({ targets: targetsToShake, x: zone.x + 5, duration: 50, yoyo: true, repeat: 3 });
                 return;
             }
 
@@ -180,13 +226,48 @@ class gameplayScene18 extends Phaser.Scene {
             if (isImage) {
                 const maskImage = this.make.image({ x: zone.x, y: zone.y, key: zone.texture.key, add: false });
                 paintGraphics.setMask(maskImage.createBitmapMask());
-                startX = zone.x - flagW/2; startY = zone.y; zoneW = flagW; zoneH = flagH;
+                
+                // Fix area sapuan khusus Canton
+                if (isCantonZone) {
+                    zoneW = 205; 
+                    zoneH = 165;
+                    startX = zone.x - flagW/2; 
+                    startY = zone.y - flagH/2 + zoneH/2; // Tengahnya Canton
+                } else {
+                    zoneW = flagW; 
+                    zoneH = flagH;
+                    startX = zone.x - flagW/2; 
+                    startY = zone.y; 
+                }
             } else {
+                // Background Area
                 const maskShapeLocal = this.make.graphics();
                 maskShapeLocal.fillStyle(0xffffff);
-                maskShapeLocal.fillRect(zone.x - zone.width/2, zone.y - zone.height/2, zone.width, zone.height);
+                
+                // Kotak Luar
+                maskShapeLocal.beginPath();
+                maskShapeLocal.moveTo(zone.x - zone.width/2, zone.y - zone.height/2);
+                maskShapeLocal.lineTo(zone.x + zone.width/2, zone.y - zone.height/2);
+                maskShapeLocal.lineTo(zone.x + zone.width/2, zone.y + zone.height/2);
+                maskShapeLocal.lineTo(zone.x - zone.width/2, zone.y + zone.height/2);
+                maskShapeLocal.closePath();
+                
+                // Lubang Canton
+                let lcx = zone.x - zone.width/2;
+                let lcy = zone.y - zone.height/2;
+                maskShapeLocal.moveTo(lcx, lcy);
+                maskShapeLocal.lineTo(lcx, lcy + 165);
+                maskShapeLocal.lineTo(lcx + 205, lcy + 165);
+                maskShapeLocal.lineTo(lcx + 205, lcy);
+                maskShapeLocal.closePath();
+                
+                maskShapeLocal.fillPath();
                 paintGraphics.setMask(maskShapeLocal.createGeometryMask());
-                startX = zone.x - zone.width / 2; startY = zone.y; zoneW = zone.width; zoneH = zone.height;
+                
+                startX = zone.x - zone.width / 2; 
+                startY = zone.y; 
+                zoneW = zone.width; 
+                zoneH = zone.height;
             }
 
             this.tweens.add({
@@ -199,9 +280,10 @@ class gameplayScene18 extends Phaser.Scene {
                 if (localStorage.getItem('sfx_on') !== 'false') sfx.play();
 
                 const animData = { progress: 0 }; 
+                const paintDuration = isCantonZone ? 600 : 1000; // Canton warnainnya lebih cepet
 
                 this.tweens.add({
-                    targets: animData, progress: 1, duration: 1000, ease: 'Linear', 
+                    targets: animData, progress: 1, duration: paintDuration, ease: 'Linear', 
                     onUpdate: () => {
                         paintGraphics.clear();
                         paintGraphics.fillStyle(paintColor, 1);
@@ -218,15 +300,26 @@ class gameplayScene18 extends Phaser.Scene {
                     },
                     onComplete: () => {
                         sfx.stop();
-                        this.tweens.add({ targets: this.brushContainer, x: width - 185, y: height - 100, angle: 0, duration: 500, ease: 'Back.out' });
+                        
+                        // FIX lock isAnimating
+                        this.tweens.add({ 
+                            targets: this.brushContainer, x: width - 185, y: height - 100, angle: 0, duration: 500, ease: 'Back.out',
+                            onComplete: () => {
+                                this.isAnimating = false; 
+                                this.checkWinCondition(zoneBg, zoneLine, zoneCanton);
+                            }
+                        });
 
                         if (stripesToDestroy && stripesToDestroy.active) stripesToDestroy.destroy();
                         
-                        if (isImage) { zone.setTint(paintColor); } 
-                        else { zone.setFillStyle(paintColor); }
+                        if (isImage) { 
+                            zone.setTint(paintColor); 
+                        } else { 
+                            zone.setFillStyle(paintColor); 
+                        }
                         zone.setAlpha(1);
 
-                        // --- LOGIKA REVEAL BINTANG (MAGIC REVEAL) --- //
+                        // --- LOGIKA REVEAL BINTANG --- //
                         if (isCantonZone) {
                             if (paintColor === this.colorBlue) {
                                 this.tweens.add({ targets: this.logoStars, alpha: 1, duration: 500, ease: 'Power2' });
@@ -238,9 +331,6 @@ class gameplayScene18 extends Phaser.Scene {
                         paintGraphics.destroy();
                         zone.setData('colorCode', paintColor);
                         zone.setData('isPainting', false);
-                        this.isAnimating = false; 
-
-                        this.checkWinCondition(zoneBg, zoneLine, zoneCanton);
                     }
                 });
             };
@@ -434,7 +524,7 @@ class gameplayScene18 extends Phaser.Scene {
 
         replay.on('pointerdown', () => { unlockNextLevel(); this.scene.restart(); });
         home.on('pointerdown', () => { unlockNextLevel(); this.scene.start('level'); });
-        next.on('pointerdown', () => { unlockNextLevel(); this.scene.start('gameplay19'); }); // Lanjut Level 19 (Jerman)
+        next.on('pointerdown', () => { unlockNextLevel(); this.scene.start('gameplay19'); }); 
     }
 
     showLoseScreen() {
