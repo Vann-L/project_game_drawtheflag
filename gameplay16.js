@@ -145,6 +145,10 @@ class gameplayScene16 extends Phaser.Scene {
         const zoneRight = this.add.rectangle(rightX, boardY, stripeW, flagH, 0xFFFFFF)
             .setInteractive({ useHandCursor: true }).setAlpha(0.01).setDepth(10); 
 
+        // -- ✨ FIX 1: BLOCKER PUTIH AGAR WARNA TENGAH TIDAK MASUK KE DAUN MAPLE ✨ --
+        this.add.image(boardX, boardY, 'canada_logo_warna').setTint(0xFFFFFF).setDepth(12);
+        // -------------------------------------------------------------------------
+
         // LOGO DAUN MAPLE (ZONA MEWARNAI) 
         const stripesLogo = createStripes(boardX, boardY, flagW, flagH, 'canada_logo_warna').setDepth(16);
         const zoneLogo = this.add.image(boardX, boardY, 'canada_logo_warna')
@@ -181,7 +185,8 @@ class gameplayScene16 extends Phaser.Scene {
             this.isAnimating = true; 
 
             const paintColor = this.selectedColor; 
-            const paintGraphics = this.add.graphics().setDepth(15);
+            // ✨ FIX 2: Kembalikan depth cat mengikuti zona masing-masing ✨
+            const paintGraphics = this.add.graphics().setDepth(zone.depth + 1);
             
             let startX, startY, zoneW, zoneH;
 

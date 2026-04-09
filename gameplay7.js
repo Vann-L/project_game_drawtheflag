@@ -120,10 +120,17 @@ class gameplayScene7 extends Phaser.Scene {
 
         // ================= PENYUSUNAN LAYER SWISS ================= //
         
+        // ================= PENYUSUNAN LAYER SWISS ================= //
+        
         // 1. ZONA BACKGROUND (MURNI KODE RECTANGLE)
         const stripesBg = createStripes(boardX, boardY, flagW, flagH).setDepth(11);
         const zoneBg = this.add.rectangle(boardX, boardY, flagW, flagH, 0xFFFFFF)
             .setInteractive({ useHandCursor: true }).setAlpha(0.01).setDepth(10); 
+
+        // -- ✨ FIX: BLOCKER PUTIH AGAR WARNA BACKGROUND TIDAK MASUK KE PALANG ✨ --
+        // Blocker ini ditaruh di depth 12, menutupi cat background (depth 11) di area tengah
+        this.add.image(boardX, boardY, 'swiss_cross').setTint(0xFFFFFF).setDepth(12);
+        // ------------------------------------------------------------------------
 
         // 2. ZONA PALANG TENGAH (Pake Aset PNG Cross Lu)
         const stripesCross = createStripes(boardX, boardY, flagW, flagH, 'swiss_cross').setDepth(16);

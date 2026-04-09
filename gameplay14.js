@@ -129,28 +129,38 @@ class gameplayScene14 extends Phaser.Scene {
 
         // ================= PENYUSUNAN LAYER BENDERA BRAZIL ================= //
 
+    // ================= PENYUSUNAN LAYER BENDERA BRAZIL ================= //
+
         // 1. ZONA BACKGROUND (Latar Hijau - Murni Kode Rectangle)
         const stripesBg = createStripes(boardX, boardY, flagW, flagH).setDepth(11);
         const zoneBg = this.add.rectangle(boardX, boardY, flagW, flagH, 0xFFFFFF)
             .setInteractive({ useHandCursor: true }).setAlpha(0.01).setDepth(10); 
 
+        // -- ✨ FIX: BLOCKER DIAMOND (Menghalangi cat Hijau masuk ke tengah) ✨ --
+        this.add.image(boardX, boardY, 'brazil_diamond').setTint(0xFFFFFF).setDepth(12);
+        // ------------------------------------------------------------------------
+
         // 2. ZONA BELAH KETUPAT (Kuning - Pake Masking Aset PNG)
-        const stripesDiamond = createStripes(boardX, boardY, flagW, flagH, 'brazil_diamond').setDepth(16);
+        const stripesDiamond = createStripes(boardX, boardY, flagW, flagH, 'brazil_diamond').setDepth(14);
         const zoneDiamond = this.add.image(boardX, boardY, 'brazil_diamond')
-            .setInteractive({ pixelPerfect: true }).setAlpha(0.01).setDepth(15);
+            .setInteractive({ pixelPerfect: true }).setAlpha(0.01).setDepth(13);
+
+        // -- ✨ FIX: BLOCKER CIRCLE (Menghalangi cat Hijau & Kuning masuk ke lingkaran) ✨ --
+        this.add.image(boardX, boardY, 'brazil_circle').setTint(0xFFFFFF).setDepth(15);
+        // ------------------------------------------------------------------------
 
         // 3. ZONA LINGKARAN TENGAH (Biru - Pake Masking Aset PNG)
-        const stripesCircle = createStripes(boardX, boardY, flagW, flagH, 'brazil_circle').setDepth(18);
+        const stripesCircle = createStripes(boardX, boardY, flagW, flagH, 'brazil_circle').setDepth(17);
         const zoneCircle = this.add.image(boardX, boardY, 'brazil_circle')
-            .setInteractive({ pixelPerfect: true }).setAlpha(0.01).setDepth(17);
+            .setInteractive({ pixelPerfect: true }).setAlpha(0.01).setDepth(16);
 
         // 4. LOGO BOLA DUNIA EFEK MAGIC (Sembunyi dulu, Alpha = 0)
-        this.logoWarna = this.add.image(boardX, boardY, 'brazil_logo_warna').setDepth(19).setAlpha(0).disableInteractive();
+        this.logoWarna = this.add.image(boardX, boardY, 'brazil_logo_warna').setDepth(18).setAlpha(0).disableInteractive();
         
         // 5. GARIS OUTLINE (Nongol terus)
-        this.add.image(boardX, boardY, 'brazil_garis').setDepth(20).disableInteractive();
+        this.add.image(boardX, boardY, 'brazil_garis').setDepth(19).disableInteractive();
         // Outline Kotak Luar Bendera
-        this.add.rectangle(boardX, boardY, flagW, flagH).setStrokeStyle(3, 0x000000).setDepth(21);
+        this.add.rectangle(boardX, boardY, flagW, flagH).setStrokeStyle(3, 0x000000).setDepth(20);
 
         this.add.image(width - 185, height - 95, 'bgKuas').setScale(0.7);
         const gagang = this.add.image(0, 0, 'gagangKuas');
