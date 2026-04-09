@@ -133,6 +133,13 @@ class gameplayScene6 extends Phaser.Scene {
         const zoneBg = this.add.rectangle(boardX, boardY, flagW, flagH, 0xFFFFFF)
             .setInteractive({ useHandCursor: true }).setAlpha(0.01).setDepth(10); 
 
+        // -- ✨ FIX: BLOCKER AGAR WARNA BACKGROUND TIDAK MASUK KE LINGKARAN ✨ --
+        // Blocker ini ditaruh di depth 12 (Di atas animasi background yang ada di depth 11)
+        // Jadi animasi cat background akan terlihat mengalir rapi di belakang lingkaran!
+        this.add.image(boardX, boardY, 'korea_atas').setTint(0xFFFFFF).setDepth(12);
+        this.add.image(boardX, boardY, 'korea_bawah').setTint(0xFFFFFF).setDepth(12);
+        // ----------------------------------------------------------------------
+
         // 2. ZONA TAEGEUK ATAS (Hitbox Merah)
         const stripesAtas = createStripes(boardX, boardY, flagW, flagH, 'korea_atas').setDepth(16);
         const zoneAtas = this.add.image(boardX, boardY, 'korea_atas')

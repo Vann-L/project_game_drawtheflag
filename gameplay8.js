@@ -120,10 +120,17 @@ class gameplayScene8 extends Phaser.Scene {
 
         // ================= PENYUSUNAN LAYER TURKI ================= //
         
+      // ================= PENYUSUNAN LAYER TURKI ================= //
+        
         // 1. ZONA BACKGROUND (MURNI KODE RECTANGLE)
         const stripesBg = createStripes(boardX, boardY, flagW, flagH).setDepth(11);
         const zoneBg = this.add.rectangle(boardX, boardY, flagW, flagH, 0xFFFFFF)
             .setInteractive({ useHandCursor: true }).setAlpha(0.01).setDepth(10); 
+
+        // -- ✨ FIX: BLOCKER PUTIH AGAR WARNA BACKGROUND TIDAK MASUK KE LOGO ✨ --
+        // Blocker ini ditaruh di depth 12, menutupi cat background (depth 11) di area bulan & bintang
+        this.add.image(boardX, boardY, 'turki_logo').setTint(0xFFFFFF).setDepth(12);
+        // ------------------------------------------------------------------------
 
         // 2. ZONA BULAN & BINTANG (Logo Putih)
         const stripesLogo = createStripes(boardX, boardY, flagW, flagH, 'turki_logo').setDepth(16);

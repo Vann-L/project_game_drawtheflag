@@ -119,20 +119,27 @@ class gameplayScene20 extends Phaser.Scene {
 
         // ================= PENYUSUNAN LAYER BENDERA INGGRIS (MURNI KODE) ================= //
 
+        // ================= PENYUSUNAN LAYER BENDERA INGGRIS (MURNI KODE) ================= //
+
         // 1. ZONA BACKGROUND (Putih)
         const stripesBg = createStripes(boardX, boardY, flagW, flagH).setDepth(11);
         const zoneBg = this.add.rectangle(boardX, boardY, flagW, flagH, 0xFFFFFF)
             .setInteractive({ useHandCursor: true }).setAlpha(0.01).setDepth(10); 
 
+        // -- ✨ FIX 1: BLOCKER PUTIH AGAR WARNA BACKGROUND TIDAK TEMBUS KE PALANG ✨ --
+        this.add.rectangle(boardX, boardY, cw, flagH, 0xFFFFFF).setDepth(12); // Blocker Vertikal
+        this.add.rectangle(boardX, boardY, flagW, cw, 0xFFFFFF).setDepth(12); // Blocker Horizontal
+        // -------------------------------------------------------------------------
+
         // 2. ZONA PALANG VERTIKAL (Merah)
-        const stripesCrossV = createStripes(boardX, boardY, cw, flagH).setDepth(13);
+        const stripesCrossV = createStripes(boardX, boardY, cw, flagH).setDepth(14);
         const zoneCrossV = this.add.rectangle(boardX, boardY, cw, flagH, 0xFFFFFF)
-            .setInteractive({ useHandCursor: true }).setAlpha(0.01).setDepth(12); 
+            .setInteractive({ useHandCursor: true }).setAlpha(0.01).setDepth(13); 
 
         // 3. ZONA PALANG HORIZONTAL (Merah)
-        const stripesCrossH = createStripes(boardX, boardY, flagW, cw).setDepth(15);
+        const stripesCrossH = createStripes(boardX, boardY, flagW, cw).setDepth(16);
         const zoneCrossH = this.add.rectangle(boardX, boardY, flagW, cw, 0xFFFFFF)
-            .setInteractive({ useHandCursor: true }).setAlpha(0.01).setDepth(14); 
+            .setInteractive({ useHandCursor: true }).setAlpha(0.01).setDepth(15);
 
         // 4. GARIS OUTLINE PALANG (Digambar Murni Pake Kode Biar Gak Tumpang Tindih)
         const outline = this.add.graphics().setDepth(20);
@@ -176,11 +183,12 @@ class gameplayScene20 extends Phaser.Scene {
             const currentColor = zone.getData('colorCode');
             if (zone.getData('isPainting') || currentColor === this.selectedColor) return;
 
-            zone.setData('isPainting', true);
+          zone.setData('isPainting', true);
             this.isAnimating = true; 
 
             const paintColor = this.selectedColor; 
-            const paintGraphics = this.add.graphics().setDepth(15);
+            // ✨ FIX 2: Kembalikan depth cat mengikuti zona masing-masing ✨
+            const paintGraphics = this.add.graphics().setDepth(zone.depth + 1);
             
             const maskShapeLocal = this.make.graphics();
             maskShapeLocal.fillStyle(0xffffff);

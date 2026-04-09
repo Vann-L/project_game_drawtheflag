@@ -138,6 +138,11 @@ class gameplayScene5 extends Phaser.Scene {
         const zoneBg = this.add.rectangle(boardX, boardY, flagW, flagH, 0xFFFFFF)
             .setInteractive({ useHandCursor: true }).setAlpha(0.01).setDepth(10); 
 
+// 👇 TAMBAHKAN KODE INI 👇
+        // Blocker putih solid di Depth 14 untuk menutupi cat background agar tidak tembus
+        this.add.circle(boardX, boardY, circleRadius, 0xFFFFFF).setDepth(14);
+        // 👆 ------------------- 👆
+
         // 2. ZONA LINGKARAN TENGAH - Depth 15 (Lebih tinggi dari kotak)
         const stripesCircle = createStripes(boardX, boardY, flagW, flagH, true, circleRadius).setDepth(15);
         const zoneCircle = this.add.circle(boardX, boardY, circleRadius, 0xFFFFFF)
